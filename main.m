@@ -2,37 +2,37 @@ clc();
 clear();
 close('all');
 table = [
-{'and', '&&'}
-{'or', '||'}
-{'times', '.*'}
-{'rdivide', './'}
-{'ldivide', '.\'}
-{'transpose', '.'''}
-{'eq', '=='}
-{'ne', '~='}
-{'le', '<='}
-{'ge', '>='}
-{'lparen', '('}
-{'rparen', ')'}
-{'lsquare', '['}
-{'rsquare', ']'}
-{'lbrace', '{'}
-{'rbrace', '}'}
-{'semi', ';'}
-{'colon', ':'}
-{'comma', ','}
-{'plus', '+'}
-{'minus', '-'}
-{'mtimes', '*'}
-{'mrdivide', '/'}
-{'mldivide', '\'}
-{'lt', '<'}
-{'gt', '>'}
-{'assign', '='}
-{'not', '~'}
-{'field', '.'}
-{'newline', newline}
-];
+    {'and', '&&'}
+    {'or', '||'}
+    {'times', '.*'}
+    {'rdivide', './'}
+    {'ldivide', '.\'}
+    {'transpose', '.'''}
+    {'eq', '=='}
+    {'ne', '~='}
+    {'le', '<='}
+    {'ge', '>='}
+    {'lparen', '('}
+    {'rparen', ')'}
+    {'lsquare', '['}
+    {'rsquare', ']'}
+    {'lbrace', '{'}
+    {'rbrace', '}'}
+    {'semi', ';'}
+    {'colon', ':'}
+    {'comma', ','}
+    {'plus', '+'}
+    {'minus', '-'}
+    {'mtimes', '*'}
+    {'mrdivide', '/'}
+    {'mldivide', '\'}
+    {'lt', '<'}
+    {'gt', '>'}
+    {'assign', '='}
+    {'not', '~'}
+    {'field', '.'}
+    {'newline', newline}
+    ];
 filename = [mfilename(), '.m'];
 fid = fopen(filename);
 content = native2unicode(fread(fid).');
@@ -53,8 +53,8 @@ while contains(content2, sprintf('\r\n'))
 end
 node2 = program(tokenize(content2, table));
 disp("isequal = " + isequal(node, node2));
-content = string(content).split(newline);
-content2 = string(content2).split(newline);
+content = string(content).split(newline).replace(' ', '');
+content2 = string(content2).split(newline).replace(' ', '');
 disp("diff = " + mat2str(find(content ~= content2)));
 function tokens = tokenize(s, table)
     j = 1;
@@ -72,7 +72,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
     while j <= numel(s) && s(j) == ' '
         j = j + 1;
     end
-    for i = 1 : size(table, 1)    
+    for i = 1 : size(table, 1)
         if j + numel(table{i, 2}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i, 2}) - 1), table{i, 2})
             type = table{i, 1};
             token = table{i, 2};
@@ -164,7 +164,12 @@ function [i, node] = reference(tokens, i)
                 i = i + 1;
                 args = {};
                 while ~strcmp(tokens(i).type, 'rparen')
-                    [i, args{1, end + 1}] = expression(tokens, i); %#ok<AGROW>
+                    if strcmp(tokens(i).type, 'colon')
+                        args{1, end + 1} = astNode('colon'); %#ok<AGROW>
+                        i = i + 1;
+                    else
+                        [i, args{1, end + 1}] = expression(tokens, i); %#ok<AGROW>
+                    end
                     switch tokens(i).type
                         case 'rparen'
                         case 'comma'
@@ -179,7 +184,12 @@ function [i, node] = reference(tokens, i)
                 i = i + 1;
                 args = {};
                 while ~strcmp(tokens(i).type, 'rbrace')
-                    [i, args{1, end + 1}] = expression(tokens, i); %#ok<AGROW>
+                    if strcmp(tokens(i).type, 'colon')
+                        args{1, end + 1} = astNode('colon'); %#ok<AGROW>
+                        i = i + 1;
+                    else
+                        [i, args{1, end + 1}] = expression(tokens, i); %#ok<AGROW>
+                    end
                     switch tokens(i).type
                         case 'rbrace'
                         case 'comma'
@@ -442,212 +452,129 @@ function [i, node] = expression(tokens, i)
     [i, node] = logicalOr(tokens, i);
 end
 function [i, node] = statement(tokens, i)
-    if ~(strcmp(tokens(i).type, 'comment') || strcmp(tokens(i).type, 'newline'))
-        [i, node] = expression(tokens, i);
+    switch tokens(i).type
+        case 'newline'
+            error('unexpected token');
+        case 'semi'
+            error('unexpected token');
+        case 'keyword'
+            keyword = tokens(i).token;
+            i = i + 1;
+        otherwise
+            keyword = [];
+    end
+    if i <= numel(tokens) && ~(strcmp(tokens(i).type, 'comment') || strcmp(tokens(i).type, 'newline'))
+        [i, expr] = expression(tokens, i);
         if i <= numel(tokens) && strcmp(tokens(i).type, 'assign')
             i = i + 1;
             [i, node2] = expression(tokens, i);
-            node = astNode('assign', node, node2);
+            expr = astNode('assign', expr, node2);
         end
         if i <= numel(tokens) && strcmp(tokens(i).type, 'semi')
             i = i + 1;
         end
     else
-        node = [];
+        expr = [];
     end
     if i <= numel(tokens) && strcmp(tokens(i).type, 'comment')
-        node = astNode('comment', node, tokens(i).token);
-        i = i + 1;
-    end
-    if i <= numel(tokens) && strcmp(tokens(i).type, 'newline')
-        i = i + 1;
-    end
-end
-function [i, node] = whileBlock(tokens, i)
-    if i <= 0 || i > numel(tokens)
-        error('index out of range');
-    end
-    if ~strcmp(tokens(i).token, 'while')
-        error('invalid keyword');
-    end
-    i = i + 1;
-    [i, condition] = expression(tokens, i);
-    if strcmp(tokens(i).type, 'comment')
-        condition = astNode('comment', condition, tokens(i).token);
-        i = i + 1;
-    end
-    if strcmp(tokens(i).type, 'newline')
-        i = i + 1;
-    end
-    nodes = {};
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-    end
-    i = i + 1;
-    if strcmp(tokens(i).type, 'comment')
-        comment = astNode('comment', [], tokens(i).token);
-        node = astNode('while', condition, nodes, comment);
+        comment = tokens(i).token;
         i = i + 1;
     else
-        node = astNode('while', condition, nodes);
+        comment = [];
     end
-    if i <= numel(tokens) && strcmp(tokens(i).type, 'newline')
-        i = i + 1;
-    end
+    node = astNode('statement', keyword, expr, comment);
 end
-function [i, node] = switchBlock(tokens, i)
-    if i <= 0 || i > numel(tokens)
-        error('index out of range');
-    end
-    if ~strcmp(tokens(i).token, 'switch')
-        error('invalid keyword');
-    end
-    i = i + 1;
-    [i, expr] = expression(tokens, i);
-    if strcmp(tokens(i).type, 'newline')
-        i = i + 1;
-    end
-    branch = {};
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        if ~strcmp(tokens(i).type, 'keyword')
-            error('must be keyword');
-        end
-        switch tokens(i).token
-            case 'case'
-                i = i + 1;
-                [i, case_] = expression(tokens, i);
-                if strcmp(tokens(i).type, 'newline')
-                    i = i + 1;
-                end
-                nodes = {};
-                while ~(strcmp(tokens(i).type, 'keyword') && (strcmp(tokens(i).token, 'case') || strcmp(tokens(i).token, 'end') || strcmp(tokens(i).token, 'otherwise')))
-                    [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-                end
-                branch{1, end + 1} = astNode('case', case_, nodes); %#ok<AGROW>
-            case 'otherwise'
-                i = i + 1;
-                if strcmp(tokens(i).type, 'newline')
-                    i = i + 1;
-                end
-                nodes = {};
-                while ~(strcmp(tokens(i).type, 'keyword') && (strcmp(tokens(i).token, 'case') || strcmp(tokens(i).token, 'end') || strcmp(tokens(i).token, 'otherwise')))
-                    [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-                end
-                branch{1, end + 1} = astNode('case', [], nodes); %#ok<AGROW>
-            otherwise
-                error('unexpected token');
-        end
-    end
-    i = i + 1;
-    node = astNode('switch', expr, branch);
-end
-function [i, node] = ifBlock(tokens, i)
-    if i <= 0 || i > numel(tokens)
-        error('index out of range');
-    end
-    branch = {};
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        if ~strcmp(tokens(i).type, 'keyword')
-            error('must be keyword');
-        end
-        switch tokens(i).token
-            case {'if', 'elseif'}
-                i = i + 1;
-                [i, case_] = expression(tokens, i);
-                if strcmp(tokens(i).type, 'newline')
-                    i = i + 1;
-                end
-                nodes = {};
-                while ~(strcmp(tokens(i).type, 'keyword') && (strcmp(tokens(i).token, 'elseif') || strcmp(tokens(i).token, 'else') || strcmp(tokens(i).token, 'end') || strcmp(tokens(i).token, 'otherwise')))
-                    [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-                end
-                branch{1, end + 1} = astNode('branch', case_, nodes); %#ok<AGROW>
-            case 'else'
-                i = i + 1;
-                if strcmp(tokens(i).type, 'newline')
-                    i = i + 1;
-                end
-                nodes = {};
-                while ~(strcmp(tokens(i).type, 'keyword') && (strcmp(tokens(i).token, 'elseif') || strcmp(tokens(i).token, 'else') || strcmp(tokens(i).token, 'end') || strcmp(tokens(i).token, 'otherwise')))
-                    [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-                end
-                branch{1, end + 1} = astNode('branch', [], nodes); %#ok<AGROW>
-            otherwise
-                error('unexpected token');
-        end
-    end
-    i = i + 1;
-    node = astNode('if', branch);
-end
-function [i, node] = functionBlock(tokens, i)
-    if i <= 0 || i > numel(tokens)
-        error('index out of range');
-    end
-    if ~strcmp(tokens(i).token, 'function')
-        error('invalid keyword');
-    end
-    i = i + 1;
-    [i, fun] = statement(tokens, i);
-    nodes = {};
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-    end
-    i = i + 1;
-    node = astNode('function', fun, nodes);
-end
-function [i, node] = forBlock(tokens, i)
-    if i <= 0 || i > numel(tokens)
-        error('index out of range');
-    end
-    if ~strcmp(tokens(i).token, 'for')
-        error('invalid keyword');
-    end
-    i = i + 1;
-    [i, fun] = statement(tokens, i);
-    nodes = {};
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        [i, nodes{1, end + 1}] = block(tokens, i); %#ok<AGROW>
-    end
-    i = i + 1;
-    node = astNode('for', fun, nodes);
-end
-function [i, node] = block(tokens, i)
-    if strcmp(tokens(i).type, 'keyword')
-        switch tokens(i).token
-            case 'while'
-                [i, node] = whileBlock(tokens, i);
-            case 'switch'
-                [i, node] = switchBlock(tokens, i);
-            case 'if'
-                [i, node] = ifBlock(tokens, i);
-            case 'for'
-                [i, node] = forBlock(tokens, i);
-            case 'function'
-                [i, node] = functionBlock(tokens, i);
-            case 'return'
-                node = astNode('keyword', 'return');
-                i = i + 1;
-            case 'continue'
-                node = astNode('keyword', 'continue');
-                i = i + 1;
-            case 'break'
-                node = astNode('keyword', 'break');
-                i = i + 1;
-            otherwise
-                error('unknown keyword');
-        end
-    else
-        [i, node] = statement(tokens, i);
-        if ~isempty(node) && ~strcmp(node.type, 'comment')
-            node = astNode('statement', node);
-        end
-    end
-end
-function node = program(tokens)
+function statements = pass1(tokens)
     i = 1;
-    node = {};
+    statements = {};
     while i <= numel(tokens)
-        [i, node{1, end + 1}] = block(tokens, i); %#ok<AGROW>
+        if i <= numel(tokens) && strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'semi')
+            i = i + 1;
+            continue
+        end
+        [i, statements{1, end + 1}] = statement(tokens, i); %#ok<AGROW>
+    end
+    statements = vertcat(statements{:});
+end
+function blocks = program(tokens)
+    statements = pass1(tokens);
+    blocks = {};
+    i = 1;
+    while i <= numel(statements)
+        [i, blocks{1, end + 1}] = block(statements, i); %#ok<AGROW>
+    end
+end
+function [i, node] = controlBlock(statements, i, token)
+    if ~strcmp(statements(i).args{1}, token)
+        error(['expect ', token]);
+    end
+    head = statements(i);
+    i = i + 1;
+    args = {};
+    while ~strcmp(statements(i).args{1}, 'end')
+        [i, args{1, end + 1}] = block(statements, i); %#ok<AGROW>
+    end
+    node = astNode(token, head, args, statements(i));
+    i = i + 1;
+end
+function [i, node] = ifBlock(statements, i)
+    if ~strcmp(statements(i).args{1}, 'if')
+        error('expect if');
+    end
+    branch = {};
+    while ~strcmp(statements(i).args{1}, 'end')
+        head = statements(i);
+        i = i + 1;
+        args = {};
+        while ~(strcmp(statements(i).args{1}, 'end') || strcmp(statements(i).args{1}, 'else') || strcmp(statements(i).args{1}, 'elseif'))
+            [i, args{1, end + 1}] = block(statements, i); %#ok<AGROW>
+        end
+        branch{1, end + 1} = {head, args}; %#ok<AGROW>
+    end
+    node = astNode('if', branch, statements(i));
+    i = i + 1;
+end
+function [i, node] = switchBlock(statements, i)
+    if ~strcmp(statements(i).args{1}, 'switch')
+        error('expect switch');
+    end
+    expr = statements(i);
+    i = i + 1;
+    branch = {};
+    while ~strcmp(statements(i).args{1}, 'end')
+        head = statements(i);
+        i = i + 1;
+        args = {};
+        while ~(strcmp(statements(i).args{1}, 'end') || strcmp(statements(i).args{1}, 'case') || strcmp(statements(i).args{1}, 'otherwise'))
+            [i, args{1, end + 1}] = block(statements, i); %#ok<AGROW>
+        end
+        branch{1, end + 1} = {head, args}; %#ok<AGROW>
+    end
+    node = astNode('switch', expr, branch, statements(i));
+    i = i + 1;
+end
+function [i, node] = block(statements, i)
+    if ~strcmp(statements(i).type, 'statement')
+        error('unexpected token');
+    end
+    if isempty(statements(i).args{1})
+        node = statements(i);
+        i = i + 1;
+        return
+    end
+    switch statements(i).args{1}
+        case {'return', 'continue', 'break'}
+            node = statements(i);
+            i = i + 1;
+            return
+        case {'for', 'while', 'function'}
+            [i, node] = controlBlock(statements, i, statements(i).args{1});
+        case 'if'
+            [i, node] = ifBlock(statements, i);
+        case 'switch'
+            [i, node] = switchBlock(statements, i);
+        otherwise
+            error('unexpected token');
     end
 end
 function node = astNode(type, varargin)
