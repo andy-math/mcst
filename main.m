@@ -34,17 +34,9 @@ table = [
     {'lambda', '@'}
     {'newline', newline}
     ];
-if isfolder('test')
-    rmdir('test','s');
-end
-mkdir('test');
-if isfolder('m2py')
-    rmdir('m2py','s');
-end
-mkdir('m2py');
 node = parseFile('main.m', table);
 output('test/main.m', node);
-output('m2py/main.py', node);
+m2py('m2py/main.py', node);
 output('test/output.m', parseFile('output.m', table));
 output('test/List.m', parseFile('List.m', table));
 compareFile('main.m', 'test/main.m');
@@ -271,7 +263,7 @@ function [i, node] = matrixLine(tokens, i)
         node = MatrixLine(args.toList(Expression.empty()));
     end
 end
-function [i, node] = matrixLiteral(tokens, i, left, right, class)
+function [i, node] = matrixLiteral(tokens, i, left, right, class_)
     if ~strcmp(tokens(i).type, left)
         error(['must be ', left]);
     end
@@ -288,9 +280,9 @@ function [i, node] = matrixLiteral(tokens, i, left, right, class)
         end
     end
     i = i + 1;
-    node = class(args.toList(MatrixLine.empty()));
+    node = class_(args.toList(MatrixLine.empty()));
 end
-function [i, node] = lambda(tokens, i)
+function [i, node] = lambda_(tokens, i)
     if ~strcmp(tokens(i).type, 'lambda')
         error('unexpected token');
     end
@@ -323,7 +315,7 @@ function [i, node] = operand(tokens, i)
             node = Literal(tokens(i).token);
             i = i + 1;
         case 'lambda'
-            [i, node] = lambda(tokens, i);
+            [i, node] = lambda_(tokens, i);
         case 'lparen'
             i = i + 1;
             [i, node] = expression(tokens, i);
@@ -611,7 +603,7 @@ function blocks = program(tokens)
     end
     blocks = blocks.toList(Segment.empty());
 end
-function [i, node] = controlBlock(tokens, i, token, class)
+function [i, node] = controlBlock(tokens, i, token, class_)
     if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, token))
         error(['expect ', token]);
     end
@@ -622,7 +614,7 @@ function [i, node] = controlBlock(tokens, i, token, class)
         args = append(args, arg);
     end
     [i, end_] = statement(tokens, i);
-    node = class(head, args.toList(Segment.empty()), end_);
+    node = class_(head, args.toList(Segment.empty()), end_);
 end
 function [i, node] = ifBlock(tokens, i)
     if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'if'))

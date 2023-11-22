@@ -1,5 +1,6 @@
 function m2py(filename, node)
     fid = fopen(filename, 'wt+');
+    fprintf(fid, 'from m2py.runtime import *\n');
     outputNode(fid, 0, node);
     fclose(fid);
 end
@@ -17,30 +18,65 @@ function outputNode(fid, indent, node)
         error('unexpected node');
     end
 end
+function patchSwitch(fid, indent, value, body)
+    for i = 1:numel(body)
+        switch body(i).head.keyword
+            case 'case'
+                fprintf(fid, '%selif (', repmat(' ', 1, indent));
+                outputExpression(fid, indent, value);
+                fprintf(fid, ') == ');
+                outputExpression(fid, indent, body(i).head.rvalue);
+                fprintf(fid, ':\n');
+                patchSwitchBody(fid, indent + 4, body(i).body);
+            case 'otherwise'
+                fprintf(fid, '%selse:\n', repmat(' ', 1, indent));
+                patchSwitchBody(fid, indent + 4, body(i).body);
+            otherwise
+                error('unexpected token');
+        end
+    end
+end
+function patchSwitchBody(fid, indent, body)
+    if isempty(body)
+        fprintf(fid, '%spass\n', repmat(' ', 1, indent));
+    else
+        outputNode(fid, indent + 4, body);
+    end
+end
 function outputSegment(fid, indent, node)
     switch class(node)
         case 'Function'
-            outputSegment(fid, indent, node.head);
+            fprintf(fid, '%sdef ', repmat(' ', 1, indent));
+            outputExpression(fid, indent, node.head.rvalue);
+            fprintf(fid, ':\n');
             outputNode(fid, indent + 4, node.body);
-            outputSegment(fid, indent, node.end_);
+            % outputSegment(fid, indent, node.end_);
         case 'While'
             outputSegment(fid, indent, node.head);
             outputNode(fid, indent + 4, node.body);
-            outputSegment(fid, indent, node.end_);
+            % outputSegment(fid, indent, node.end_);
         case 'For'
-            outputSegment(fid, indent, node.head);
+            fprintf(fid, '%sfor ', repmat(' ', 1, indent));
+            outputExpression(fid, indent, node.head.lvalue);
+            fprintf(fid, ' in ');
+            outputExpression(fid, indent, node.head.rvalue);
+            fprintf(fid, ':\n');
             outputNode(fid, indent + 4, node.body);
-            outputSegment(fid, indent, node.end_);
+            % outputSegment(fid, indent, node.end_);
         case 'If'
             outputNode(fid, indent, node.body);
-            outputSegment(fid, indent, node.end_);
+            % outputSegment(fid, indent, node.end_);
         case 'IfBranch'
             outputSegment(fid, indent, node.head);
             outputNode(fid, indent + 4, node.body);
         case 'Switch'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.body);
-            outputSegment(fid, indent, node.end_);
+            value = node.head.rvalue;
+            fprintf(fid, '%sif False and ', repmat(' ', 1, indent));
+            outputExpression(fid, indent, value);
+            fprintf(fid, ':\n%spass\n', repmat(' ', 1, indent + 4));
+            patchSwitch(fid, indent, value, node.body);
+            % outputNode(fid, indent, node.body);
+            % outputSegment(fid, indent, node.end_);
         case 'SwitchCase'
             outputSegment(fid, indent, node.head);
             outputNode(fid, indent + 4, node.body);
@@ -69,11 +105,14 @@ function outputSegment(fid, indent, node)
                     fprintf(fid, ';');
                 end
             end
+            if ismember(node.keyword, {'if', 'elseif', 'else', 'while', 'for'})
+                fprintf(fid, ':');
+            end
             if ~isempty(node.comment)
                 if ~isempty(node.keyword) || ~isempty(node.lvalue) || ~isempty(node.rvalue)
                     fprintf(fid, ' ');
                 end
-                fprintf(fid, '%s', node.comment);
+                fprintf(fid, '#%s', node.comment(2:end));
             end
             fprintf(fid, '\n');
         case 'ClassDef'
@@ -110,7 +149,13 @@ end
 function outputExpression(fid, indent, node)
     switch class(node)
         case 'Literal'
-            fprintf(fid, '%s', node.value);
+            if startsWith(node.value, '''')
+                fprintf(fid, '''%s''', replace(replace(node.value(2:end-1),'\','\\'), '''''', '\'''));
+            elseif startsWith(node.value, '"')
+                fprintf(fid, '''%s''', replace(replace(node.value(2:end-1),'\','\\'), '""', '\"'));
+            else
+                fprintf(fid, '%s', node.value);
+            end
         case 'Identifier'
             fprintf(fid, '%s', node.identifier);
         case 'Field'
@@ -128,37 +173,46 @@ function outputExpression(fid, indent, node)
             outputExpression(fid, indent, node.value);
             fprintf(fid, ')');
         case 'Not'
-            fprintf(fid, '~');
+            fprintf(fid, 'not ');
             outputExpression(fid, indent, node.value);
         case 'Transpose'
+            fprintf(fid, 'tr(');
             outputExpression(fid, indent, node.value);
-            fprintf(fid, '.''');
+            fprintf(fid, ')');
         case 'Lambda'
-            fprintf(fid, '@');
+            fprintf(fid, 'lambda ');
             if ~(isempty(node.args) && isa(node.expr, 'Identifier'))
-                fprintf(fid, '(');
                 for i = 1 : numel(node.args)
                     outputExpression(fid, indent, node.args(i));
                     if i < numel(node.args)
                         fprintf(fid, ', ');
                     end
                 end
-                fprintf(fid, ')');
+            else
+                fprintf(fid, '*args');
             end
+            fprintf(fid, ': ');
             outputExpression(fid, indent, node.expr);
+            if isempty(node.args) && isa(node.expr, 'Identifier')
+                fprintf(fid, '(*args)');
+            end
         case 'Colon'
             if isempty(node.begin) && isempty(node.step) && isempty(node.end_)
-                fprintf(fid, ':');
+                fprintf(fid, 'colon(None, None, None)');
             elseif isempty(node.step)
+                fprintf(fid, 'colon(');
                 outputExpression(fid, indent, node.begin);
-                fprintf(fid, ' : ');
+                fprintf(fid, ', ');
                 outputExpression(fid, indent, node.end_);
+                fprintf(fid, ')');
             else
+                fprintf(fid, 'colon(');
                 outputExpression(fid, indent, node.begin);
-                fprintf(fid, ' : ');
+                fprintf(fid, ', ');
                 outputExpression(fid, indent, node.step);
-                fprintf(fid, ' : ');
+                fprintf(fid, ', ');
                 outputExpression(fid, indent, node.end_);
+                fprintf(fid, ')');
             end
         case 'PIndex'
             outputExpression(fid, indent, node.value);
@@ -172,14 +226,14 @@ function outputExpression(fid, indent, node)
             fprintf(fid, ')');
         case 'BIndex'
             outputExpression(fid, indent, node.value);
-            fprintf(fid, '{');
+            fprintf(fid, '(');
             for i = 1 : numel(node.index)
                 outputExpression(fid, indent, node.index(i));
                 if i < numel(node.index)
                     fprintf(fid, ', ');
                 end
             end
-            fprintf(fid, '}');
+            fprintf(fid, ')');
         case 'MatrixLine'
             for i = 1 : numel(node.item)
                 outputExpression(fid, indent, node.item(i));
@@ -202,7 +256,7 @@ function outputExpression(fid, indent, node)
             end
             fprintf(fid, ']');
         case 'Cell'
-            fprintf(fid, '{');
+            fprintf(fid, '[');
             if numel(node.line) > 1
                 fprintf(fid, '\n');
             end
@@ -212,7 +266,7 @@ function outputExpression(fid, indent, node)
                     fprintf(fid, '\n');
                 end
             end
-            fprintf(fid, '}');
+            fprintf(fid, ']');
         case 'LT'
             outputExpression(fid, indent, node.a);
             fprintf(fid, ' < ');
@@ -235,7 +289,7 @@ function outputExpression(fid, indent, node)
             outputExpression(fid, indent, node.b);
         case 'NE'
             outputExpression(fid, indent, node.a);
-            fprintf(fid, ' ~= ');
+            fprintf(fid, ' != ');
             outputExpression(fid, indent, node.b);
         case 'Plus'
             outputExpression(fid, indent, node.a);
@@ -247,11 +301,11 @@ function outputExpression(fid, indent, node)
             outputExpression(fid, indent, node.b);
         case 'And'
             outputExpression(fid, indent, node.a);
-            fprintf(fid, ' && ');
+            fprintf(fid, ' and ');
             outputExpression(fid, indent, node.b);
         case 'Or'
             outputExpression(fid, indent, node.a);
-            fprintf(fid, ' || ');
+            fprintf(fid, ' or ');
             outputExpression(fid, indent, node.b);
         case 'MTimes'
             outputExpression(fid, indent, node.a);
