@@ -1,24 +1,25 @@
 function m2py(filename, node)
-    fid = fopen(filename, 'wt+');
-    fprintf(fid, 'from m2py.runtime import *\n');
-    outputNode(fid, 0, node);
+    fid = fopen(filename, 'at+');
+    outputNode(fid, 0, node, []);
     fclose(fid);
 end
-function outputNode(fid, indent, node)
+function outputNode(fid, indent, node, retval)
+    assert(nargin == 4);
     if isempty(node)
     elseif numel(node) > 1
         for i = 1 : numel(node)
-            outputNode(fid, indent, node(i));
+            outputNode(fid, indent, node(i), retval);
         end
     elseif isa(node, 'Segment')
-        outputSegment(fid, indent, node);
+        outputSegment(fid, indent, node, retval);
     elseif isa(node, 'Expression')
         outputExpression(fid, indent, node);
     else
         error('unexpected node');
     end
 end
-function patchSwitch(fid, indent, value, body)
+function patchSwitch(fid, indent, value, body, retval)
+    assert(nargin == 5);
     for i = 1:numel(body)
         switch body(i).head.keyword
             case 'case'
@@ -27,33 +28,42 @@ function patchSwitch(fid, indent, value, body)
                 fprintf(fid, ') == ');
                 outputExpression(fid, indent, body(i).head.rvalue);
                 fprintf(fid, ':\n');
-                patchSwitchBody(fid, indent + 4, body(i).body);
+                patchSwitchBody(fid, indent + 4, body(i).body, retval);
             case 'otherwise'
                 fprintf(fid, '%selse:\n', repmat(' ', 1, indent));
-                patchSwitchBody(fid, indent + 4, body(i).body);
+                patchSwitchBody(fid, indent + 4, body(i).body, retval);
             otherwise
                 error('unexpected token');
         end
     end
 end
-function patchSwitchBody(fid, indent, body)
+function patchSwitchBody(fid, indent, body, retval)
+    assert(nargin == 4);
     if isempty(body)
         fprintf(fid, '%spass\n', repmat(' ', 1, indent));
     else
-        outputNode(fid, indent + 4, body);
+        outputNode(fid, indent + 4, body, retval);
     end
 end
-function outputSegment(fid, indent, node)
+function outputSegment(fid, indent, node, retval)
+    assert(nargin == 4);
     switch class(node)
         case 'Function'
             fprintf(fid, '%sdef ', repmat(' ', 1, indent));
             outputExpression(fid, indent, node.head.rvalue);
-            fprintf(fid, ':\n');
-            outputNode(fid, indent + 4, node.body);
+            fprintf(fid, ': # retval: ');
+            retval = node.head.lvalue;
+            if isempty(retval)
+                outputExpression(fid, indent, Matrix(MatrixLine.empty()));
+            else
+                outputExpression(fid, indent, retval);
+            end
+            fprintf(fid, '\n');
+            outputNode(fid, indent + 4, node.body, retval);
             % outputSegment(fid, indent, node.end_);
         case 'While'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.body);
+            outputSegment(fid, indent, node.head, retval);
+            outputNode(fid, indent + 4, node.body, retval);
             % outputSegment(fid, indent, node.end_);
         case 'For'
             fprintf(fid, '%sfor ', repmat(' ', 1, indent));
@@ -61,25 +71,25 @@ function outputSegment(fid, indent, node)
             fprintf(fid, ' in ');
             outputExpression(fid, indent, node.head.rvalue);
             fprintf(fid, ':\n');
-            outputNode(fid, indent + 4, node.body);
+            outputNode(fid, indent + 4, node.body, retval);
             % outputSegment(fid, indent, node.end_);
         case 'If'
-            outputNode(fid, indent, node.body);
+            outputNode(fid, indent, node.body, retval);
             % outputSegment(fid, indent, node.end_);
         case 'IfBranch'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.body);
+            outputSegment(fid, indent, node.head, retval);
+            outputNode(fid, indent + 4, node.body, retval);
         case 'Switch'
             value = node.head.rvalue;
             fprintf(fid, '%sif False and ', repmat(' ', 1, indent));
             outputExpression(fid, indent, value);
             fprintf(fid, ':\n%spass\n', repmat(' ', 1, indent + 4));
-            patchSwitch(fid, indent, value, node.body);
+            patchSwitch(fid, indent, value, node.body, retval);
             % outputNode(fid, indent, node.body);
             % outputSegment(fid, indent, node.end_);
         case 'SwitchCase'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.body);
+            outputSegment(fid, indent, node.head, retval);
+            outputNode(fid, indent + 4, node.body, retval);
         case 'Statement'
             fprintf(fid, repmat(' ', 1, indent));
             if ~isempty(node.keyword)
@@ -93,6 +103,10 @@ function outputSegment(fid, indent, node)
                         outputExpression(fid, indent, node.modifier(i));
                     end
                     fprintf(fid, ')');
+                end
+                if strcmp(node.keyword, 'return') && ~isempty(retval)
+                    fprintf(fid, ' ');
+                    outputExpression(fid, indent, retval);
                 end
             end
             if ~isempty(node.lvalue)
@@ -116,18 +130,18 @@ function outputSegment(fid, indent, node)
             end
             fprintf(fid, '\n');
         case 'ClassDef'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.property);
-            outputNode(fid, indent + 4, node.method);
-            outputSegment(fid, indent, node.end_);
+            outputSegment(fid, indent, node.head, retval);
+            outputNode(fid, indent + 4, node.property, retval);
+            outputNode(fid, indent + 4, node.method, retval);
+            outputSegment(fid, indent, node.end_, retval);
         case 'Properties'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.prop);
-            outputSegment(fid, indent, node.end_);
+            outputSegment(fid, indent, node.head, retval);
+            outputNode(fid, indent + 4, node.prop, retval);
+            outputSegment(fid, indent, node.end_, retval);
         case 'Methods'
-            outputSegment(fid, indent, node.head);
-            outputNode(fid, indent + 4, node.fun);
-            outputSegment(fid, indent, node.end_);
+            outputSegment(fid, indent, node.head, retval);
+            outputNode(fid, indent + 4, node.fun, retval);
+            outputSegment(fid, indent, node.end_, retval);
         case 'Variable'
             fprintf(fid, repmat(' ', 1, indent));
             fprintf(fid, '%s', node.name);
@@ -147,6 +161,7 @@ function outputSegment(fid, indent, node)
     end
 end
 function outputExpression(fid, indent, node)
+    assert(nargin == 3);
     switch class(node)
         case 'Literal'
             if startsWith(node.value, '''')

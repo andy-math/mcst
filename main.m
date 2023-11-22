@@ -34,6 +34,9 @@ table = [
     {'lambda', '@'}
     {'newline', newline}
     ];
+fid = fopen('m2py/main.py', 'wt+');
+fprintf(fid, 'from m2py.runtime import *\n');
+fclose(fid);
 node = parseFile('main.m', table);
 output('test/main.m', node);
 m2py('m2py/main.py', node);
@@ -82,16 +85,16 @@ function node = parseFile(filename, table)
 end
 function tokens = tokenize(s, table)
     j = 1;
-    tokens = cell(numel(s), 1);
+    tokens = List();
     count = 0;
     lastToken = '';
     while j < numel(s)
         count = count + 1;
         [j, type, token] = nextToken(s, j, table, lastToken);
-        tokens{count} = Token(type, token);
+        tokens.append(Token(type, token));
         lastToken = type;
     end
-    tokens = cell2mat(tokens(1 : count));
+    tokens = tokens.toList([]);
 end
 function [j, type, token] = nextToken(s, j, table, lastToken)
     while j <= numel(s) && s(j) == ' '
@@ -659,7 +662,7 @@ function [i, node] = propertiesBlock(tokens, i)
     props = List();
     while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
         [i, prop] = variableDeclare(tokens, i);
-        props = props.append(prop);
+        props.append(prop);
     end
     [i, end_] = statement(tokens, i);
     node = Properties(head, props.toList(Statement.empty()), end_);
@@ -675,7 +678,7 @@ function [i, node] = methodsBlock(tokens, i)
             error('unexpected token');
         end
         [i, fun] = block(tokens, i);
-        meth = meth.append(fun);
+        meth.append(fun);
     end
     [i, end_] = statement(tokens, i);
     node = Methods(head, meth.toList(Function.empty()), end_);
@@ -737,4 +740,7 @@ end
 function t = Token(type, token)
     t.type = type;
     t.token = token;
+end
+function a = append(a, b)
+    a.append(b);
 end

@@ -1,20 +1,26 @@
 classdef List
-    properties(Access=private)
-        list = {}
-        count = 0
+    properties(SetAccess=immutable)
+        append function_handle
+        toList function_handle
     end
     methods
-        function self = append(self, item)
-            if self.count == numel(self.list)
-                li = cell(1, self.count * 2);
-                li(1 : self.count) = self.list;
-                self.list = li;
+        function self = List()
+            list = {};
+            count = 0;
+            self.append = @append;
+            self.toList = @toList;
+            function append(item)
+                if count == numel(list)
+                    li = cell(1, count * 2);
+                    li(1 : count) = list;
+                    list = li;
+                end
+                count = count + 1;
+                list{count} = item;
             end
-            self.count = self.count + 1;
-            self.list{self.count} = item;
-        end
-        function li = toList(self, li)
-            li = [li, self.list{:}];
+            function li = toList(li)
+                li = [li, list{1 : count}];
+            end
         end
     end
 end
