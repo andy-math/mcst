@@ -51,6 +51,13 @@ function outputSegment(fid, indent, node)
                 if ~isempty(node.rvalue)
                     fprintf(fid, ' ');
                 end
+                if ~isempty(node.modifier)
+                    fprintf(fid, '(');
+                    for i = 1:numel(node.modifier)
+                        outputExpression(fid, indent, node.modifier(i));
+                    end
+                    fprintf(fid, ')');
+                end
             end
             if ~isempty(node.lvalue)
                 outputExpression(fid, indent, node.lvalue);
@@ -69,6 +76,19 @@ function outputSegment(fid, indent, node)
                 fprintf(fid, '%s', node.comment);
             end
             fprintf(fid, '\n');
+        case 'ClassDef'
+            outputSegment(fid, indent, node.head);
+            outputNode(fid, indent + 4, node.property);
+            outputNode(fid, indent + 4, node.method);
+            outputSegment(fid, indent, node.end_);
+        case 'Properties'
+            outputSegment(fid, indent, node.head);
+            outputNode(fid, indent + 4, node.prop);
+            outputSegment(fid, indent, node.end_);
+        case 'Methods'
+            outputSegment(fid, indent, node.head);
+            outputNode(fid, indent + 4, node.fun);
+            outputSegment(fid, indent, node.end_);
         otherwise
             error('unexpected node');
     end
@@ -219,6 +239,16 @@ function outputExpression(fid, indent, node)
             outputExpression(fid, indent, node.a);
             fprintf(fid, ' || ');
             outputExpression(fid, indent, node.b);
+        case 'MTimes'
+            outputExpression(fid, indent, node.a);
+            fprintf(fid, ' * ');
+            outputExpression(fid, indent, node.b);
+        case 'Modifier'
+            if ~isempty(node.lvalue)
+                outputExpression(fid, indent, node.lvalue);
+                fprintf(fid, '=');
+            end
+            outputExpression(fid, indent, node.rvalue);
         otherwise
             error('unexpected node');
     end

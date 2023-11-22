@@ -40,8 +40,18 @@ end
 mkdir('test');
 output('test/main.m', parseFile('main.m', table));
 output('test/output.m', parseFile('output.m', table));
+output('test/List.m', parseFile('List.m', table));
 compareFile('main.m', 'test/main.m');
 compareFile('output.m', 'test/output.m');
+compareFile('List.m', 'test/List.m');
+return
+files = dir('mcst');
+for i = 1:numel(files)
+    if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
+        output("test/"+files(i).name, parseFile("mcst/"+files(i).name, table));
+        compareFile("mcst/"+files(i).name, "test/"+files(i).name);
+    end
+end
 function [] = forTestFunction()
     a.(1 + 1) = c;
     @bb;
@@ -56,12 +66,12 @@ function compareFile(file1, file2)
     content1(content1 == "") = [];
     content2(content2 == "") = [];
     if numel(content1) ~= numel(content2)
-        fprintf(1, 'length of %s not equal with length of %s\n', file1, file2);
+        warning('length of %s not equal with length of %s', file1, file2);
         return
     end
     d = find(string(content1) ~= string(content2));
     if ~isempty(d)
-        fprintf(1, '%s vs %s: diff found in line %s\n', file1, file2, mat2str(d));
+        warning('%s vs %s: diff found in line %s\n', file1, file2, mat2str(d));
         return
     end
     fprintf(1, '%s vs %s: equal without space\n', file1, file2);
@@ -137,7 +147,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
             j = j + 1;
         end
         token = s(i : j - 1);
-        if strcmp(token, 'return') || strcmp(token, 'break') || strcmp(token, 'continue') || strcmp(token, 'if') || strcmp(token, 'elseif') || strcmp(token, 'for') || strcmp(token, 'else') || strcmp(token, 'while') || strcmp(token, 'end') || strcmp(token, 'function') || strcmp(token, 'switch') || strcmp(token, 'case') || strcmp(token, 'otherwise')
+        if ismember(token, {'return', 'break', 'continue', 'if', 'elseif', 'for', 'else', 'while', 'end', 'function', 'switch', 'case', 'otherwise', 'classdef', 'properties', 'methods'})
             type = 'keyword';
         else
             type = 'identifier';
@@ -491,6 +501,22 @@ end
 function [i, node] = expression(tokens, i)
     [i, node] = logicalOr(tokens, i);
 end
+function [i, node] = modifier(tokens, i)
+    if ~strcmp(tokens(i).type,'identifier')
+        error('unexpected token');
+    end
+    rvalue = Identifier(tokens(i).token);
+    i = i+1;
+    if strcmp(tokens(i).type,'assign')
+        i = i+1;
+        lvalue = rvalue;
+        rvalue = Identifier(tokens(i).token);
+        i = i+1;
+    else
+        lvalue = Identifier.empty();
+    end
+    node = Modifier(lvalue, rvalue);
+end
 function [i, node] = statement(tokens, i)
     switch tokens(i).type
         case {'newline', 'semi'}
@@ -499,7 +525,22 @@ function [i, node] = statement(tokens, i)
             keyword = tokens(i).token;
             i = i + 1;
         otherwise
-            keyword = [];
+            keyword = '';
+    end
+    if ismember(keyword, {'properties', 'classdef', 'methods'}) && strcmp(tokens(i).type, 'lparen')
+        i = i + 1;
+        modifiers = List();
+        while ~strcmp(tokens(i).type, 'rparen')
+            [i, mod] = modifier(tokens, i);
+            modifiers = append(modifiers, mod);
+            if strcmp(tokens(i).type, 'comma')
+                i = i + 1;
+            end
+        end
+        i = i + 1;
+        modifiers = modifiers.toList(Modifier.empty());
+    else
+        modifiers = Modifier.empty();
     end
     if i <= numel(tokens) && ~(strcmp(tokens(i).type, 'comment') || strcmp(tokens(i).type, 'newline'))
         [i, rvalue] = expression(tokens, i);
@@ -523,7 +564,7 @@ function [i, node] = statement(tokens, i)
     else
         comment = [];
     end
-    node = Statement(keyword, lvalue, rvalue, comment);
+    node = Statement(keyword, modifiers, lvalue, rvalue, comment);
 end
 function statements = parseStatement(tokens)
     i = 1;
@@ -600,6 +641,62 @@ function [i, node] = switchBlock(statements, i)
     node = Switch(expr, branch.toList(SwitchCase.empty()), statements(i));
     i = i + 1;
 end
+function [i, node] = propertiesBlock(statements, i)
+    if ~strcmp(statements(i).keyword, 'properties')
+        error('expect properties');
+    end
+    head = statements(i);
+    i = i+1;
+    props = List();
+    while ~strcmp(statements(i).keyword, 'end')
+        props = props.append(statements(i));
+        i = i+1;
+    end
+    node = Properties(head, props.toList(Statement.empty()), statements(i));
+    i = i + 1;
+end
+function [i, node] = methodsBlock(statements, i)
+    if ~strcmp(statements(i).keyword, 'methods')
+        error('expect methods');
+    end
+    head = statements(i);
+    i = i+1;
+    meth = List();
+    while ~strcmp(statements(i).keyword, 'end')
+        if ~strcmp(statements(i).keyword, 'function')
+            error('unexpected token');
+        end
+        [i, fun] = block(statements, i);
+        meth = meth.append(fun);
+    end
+    node = Methods(head, meth.toList(Function.empty()), statements(i));
+    i = i + 1;
+end
+function [i, node] = classBlock(statements, i)
+    if ~strcmp(statements(i).keyword, 'classdef')
+        error('expect classdef');
+    end
+    head = statements(i);
+    i = i + 1;
+    property = List();
+    method = List();
+    while ~strcmp(statements(i).keyword, 'end')
+        switch statements(i).keyword
+            case 'properties'
+                [i, prop] = propertiesBlock(statements, i);
+                property = append(property, prop);
+            case 'methods'
+                [i, meth] = methodsBlock(statements, i);
+                method = append(method, meth);
+            otherwise
+                error('unexpected keyword');
+        end
+    end
+    property = property.toList(Properties.empty());
+    method = method.toList(Methods.empty());
+    node = ClassDef(head, property, method, statements(i));
+    i = i + 1;
+end
 function [i, node] = block(statements, i)
     if ~isa(statements(i), 'Statement')
         error('unexpected token');
@@ -624,6 +721,8 @@ function [i, node] = block(statements, i)
             [i, node] = ifBlock(statements, i);
         case 'switch'
             [i, node] = switchBlock(statements, i);
+        case 'classdef'
+            [i, node] = classBlock(statements, i);
         otherwise
             error('unexpected token');
     end
