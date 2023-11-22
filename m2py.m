@@ -60,6 +60,12 @@ function outputSegment(fid, indent, node, retval)
             end
             fprintf(fid, '\n');
             outputNode(fid, indent + 4, node.body, retval);
+            fprintf(fid, '%sreturn', repmat(' ', 1, indent + 4));
+            if ~isempty(retval)
+                fprintf(fid, ' ');
+                outputExpression(fid, indent, retval);
+            end
+            fprintf(fid, '\n');
             % outputSegment(fid, indent, node.end_);
         case 'While'
             outputSegment(fid, indent, node.head, retval);
