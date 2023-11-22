@@ -34,8 +34,21 @@ table = [
     {'lambda', '@'}
     {'newline', newline}
     ];
+if isfolder('m2py/nodes')
+    rmdir('m2py/nodes', 's');
+end
+mkdir('m2py/nodes');
 fid = fopen('m2py/main.py', 'wt+');
-fprintf(fid, 'from m2py.runtime import *\n');
+files = dir('mcst');
+for i = 1:numel(files)
+    if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
+        node = parseFile("mcst/"+files(i).name, table);
+        output("test/"+files(i).name, node);
+        m2py("m2py/nodes/"+files(i).name(1:end-2)+".py", node);
+        fprintf(fid, 'from m2py.nodes.%s import %s\n', files(i).name(1:end-2), files(i).name(1:end-2));
+        compareFile("mcst/"+files(i).name, "test/"+files(i).name);
+    end
+end
 fclose(fid);
 node = parseFile('main.m', table);
 output('test/main.m', node);
@@ -45,14 +58,6 @@ output('test/List.m', parseFile('List.m', table));
 compareFile('main.m', 'test/main.m');
 compareFile('output.m', 'test/output.m');
 compareFile('List.m', 'test/List.m');
-files = dir('mcst');
-for i = 1:numel(files)
-    if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
-        node = parseFile("mcst/"+files(i).name, table);
-        output("test/"+files(i).name, node);
-        compareFile("mcst/"+files(i).name, "test/"+files(i).name);
-    end
-end
 function compareFile(file1, file2)
     content1 = readFile(file1);
     content2 = readFile(file2);
@@ -204,7 +209,7 @@ function [i, node] = reference(tokens, i)
                 args = List();
                 while ~strcmp(tokens(i).type, 'rparen')
                     if strcmp(tokens(i).type, 'colon')
-                        args.append(Colon());
+                        args.append(Colon(Expression.empty(), Expression.empty(), Expression.empty()));
                         i = i + 1;
                     else
                         [i, arg] = expression(tokens, i);
@@ -258,10 +263,11 @@ function [i, node] = matrixLine(tokens, i)
             i = i + 1;
         end
     end
+    args = args.toList(Expression.empty());
     if isempty(args)
         node = MatrixLine.empty();
     else
-        node = MatrixLine(args.toList(Expression.empty()));
+        node = MatrixLine(args);
     end
 end
 function [i, node] = matrixLiteral(tokens, i, left, right, class_)
@@ -430,7 +436,7 @@ function [i, node] = colonOperator(tokens, i)
             [i, node3] = addSub(tokens, i);
             node = Colon(node, node2, node3);
         else
-            node = Colon(node, node2);
+            node = Colon(node, Expression.empty(), node2);
         end
     end
 end
@@ -734,8 +740,4 @@ function [i, node] = block(tokens, i)
     while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'comma'))
         i = i + 1;
     end
-end
-function t = Token(type, token)
-    t.type = type;
-    t.token = token;
 end

@@ -1,5 +1,6 @@
 function m2py(filename, node)
     fid = fopen(filename, 'at+');
+    fprintf(fid, 'from mruntime import *\n');
     functions = arrayfun(@(x)isa(x, 'Function'), node);
     node = [node(functions), node(~functions)];
     outputNode(fid, 0, node, []);
@@ -27,7 +28,11 @@ function patchSwitch(fid, indent, value, body, retval)
             case 'case'
                 fprintf(fid, '%selif (', repmat(' ', 1, indent));
                 outputExpression(fid, indent, value);
-                fprintf(fid, ') == ');
+                if isa(body(i).head.rvalue, 'Cell')
+                    fprintf(fid, ') in ');
+                else
+                    fprintf(fid, ') == ');
+                end
                 outputExpression(fid, indent, body(i).head.rvalue);
                 fprintf(fid, ':\n');
                 patchSwitchBody(fid, indent + 4, body(i).body, retval);
@@ -44,7 +49,7 @@ function patchSwitchBody(fid, indent, body, retval)
     if isempty(body)
         fprintf(fid, '%spass\n', repmat(' ', 1, indent));
     else
-        outputNode(fid, indent + 4, body, retval);
+        outputNode(fid, indent, body, retval);
     end
 end
 function outputSegment(fid, indent, node, retval)
@@ -52,8 +57,15 @@ function outputSegment(fid, indent, node, retval)
     switch class(node)
         case 'Function'
             fprintf(fid, '%sdef ', repmat(' ', 1, indent));
-            outputExpression(fid, indent, node.head.rvalue);
-            fprintf(fid, ': # retval: ');
+            outputExpression(fid, indent, node.head.rvalue.value);
+            fprintf(fid, '(');
+            for i = 1:numel(node.head.rvalue.index)
+                outputExpression(fid, indent, node.head.rvalue.index(i));
+                if i < numel(node.head.rvalue.index)
+                    fprintf(fid, ', ');
+                end
+            end
+            fprintf(fid, '): # retval: ');
             retval = node.head.lvalue;
             if isempty(retval)
                 outputExpression(fid, indent, Matrix(MatrixLine.empty()));
@@ -138,10 +150,70 @@ function outputSegment(fid, indent, node, retval)
             end
             fprintf(fid, '\n');
         case 'ClassDef'
-            outputSegment(fid, indent, node.head, retval);
-            outputNode(fid, indent + 4, node.property, retval);
-            outputNode(fid, indent + 4, node.method, retval);
-            outputSegment(fid, indent, node.end_, retval);
+            if isa(node.head.rvalue, 'LT') && isa(node.head.rvalue.b, 'Identifier')
+                fprintf(fid, 'from m2py.nodes.');
+                outputExpression(fid, indent, node.head.rvalue.b);
+                fprintf(fid, ' import ');
+                outputExpression(fid, indent, node.head.rvalue.b);
+                fprintf(fid, '\n');
+            end
+            fprintf(fid, '%sclass ', repmat(' ', 1, indent));
+            if isa(node.head.rvalue, 'LT')
+                outputExpression(fid, indent, node.head.rvalue.a);
+                if isa(node.head.rvalue.b, 'Identifier')
+                    fprintf(fid, '(');
+                    outputExpression(fid, indent, node.head.rvalue.b);
+                    fprintf(fid, ')');
+                end
+                className = node.head.rvalue.a.identifier;
+            else
+                outputExpression(fid, indent, node.head.rvalue);
+                className = node.head.rvalue.identifier;
+            end
+            fprintf(fid, ':\n');
+            for k = 1:numel(node.method)
+                for i = 1:numel(node.method(k).fun)
+                    fprintf(fid, '%sdef ', repmat(' ', 1, indent + 4));
+                    funName = node.method(k).fun(i).head.rvalue.value.identifier;
+                    if strcmp(className, funName)
+                        fprintf(fid, '%s', '__init__');
+                    else
+                        fprintf(fid, '%s', funName);
+                    end
+                    fprintf(fid, '(self, *nargin): # retval: ');
+                    retval = node.method(k).fun(i).head.lvalue;
+                    if isempty(retval)
+                        outputExpression(fid, indent + 4, Matrix(MatrixLine.empty()));
+                    else
+                        outputExpression(fid, indent + 4, retval);
+                    end
+                    fprintf(fid, '\n');
+                    fprintf(fid, '%s[', repmat(' ', 1, indent + 8));
+                    for j = 1:numel(node.method(k).fun(i).head.rvalue.index)
+                        outputExpression(fid, indent + 4, node.method(k).fun(i).head.rvalue.index(j));
+                        if j < numel(node.method(k).fun(i).head.rvalue.index)
+                            fprintf(fid, ', ');
+                        end
+                    end
+                    fprintf(fid, '] = nargin\n%snargin = len(nargin)\n', repmat(' ', 1, indent + 8));
+                    outputNode(fid, indent + 8, node.method(k).fun(i).body, retval);
+                    if ~strcmp(className, funName)
+                        fprintf(fid, '%sreturn', repmat(' ', 1, indent + 8));
+                        if ~isempty(retval)
+                            fprintf(fid, ' ');
+                            outputExpression(fid, indent + 4, retval);
+                        end
+                        fprintf(fid, '\n');
+                    end
+                end
+            end
+            fprintf(fid, '%s@staticmethod\n', repmat(' ', 1, indent + 4));
+            fprintf(fid, '%sdef empty():\n', repmat(' ', 1, indent + 4));
+            fprintf(fid, '%spass\n', repmat(' ', 1, indent + 8));
+            % outputSegment(fid, indent, node.head, retval);
+            % outputNode(fid, indent + 4, node.property, retval);
+            % outputNode(fid, indent + 4, node.method, retval);
+            % outputSegment(fid, indent, node.end_, retval);
         case 'Properties'
             outputSegment(fid, indent, node.head, retval);
             outputNode(fid, indent + 4, node.prop, retval);
@@ -238,25 +310,25 @@ function outputExpression(fid, indent, node)
                 fprintf(fid, ')');
             end
         case 'PIndex'
+            fprintf(fid, 'mparen(');
             outputExpression(fid, indent, node.value);
-            fprintf(fid, '(');
-            for i = 1 : numel(node.index)
-                outputExpression(fid, indent, node.index(i));
-                if i < numel(node.index)
-                    fprintf(fid, ', ');
+            if ~isempty(node.index)
+                fprintf(fid, ', ');
+                for i = 1 : numel(node.index)
+                    outputExpression(fid, indent, node.index(i));
+                    if i < numel(node.index)
+                        fprintf(fid, ', ');
+                    end
                 end
             end
             fprintf(fid, ')');
         case 'BIndex'
             outputExpression(fid, indent, node.value);
-            fprintf(fid, '(');
             for i = 1 : numel(node.index)
+                fprintf(fid, '[(');
                 outputExpression(fid, indent, node.index(i));
-                if i < numel(node.index)
-                    fprintf(fid, ', ');
-                end
+                fprintf(fid, ')-1]');
             end
-            fprintf(fid, ')');
         case 'MatrixLine'
             for i = 1 : numel(node.item)
                 outputExpression(fid, indent, node.item(i));
@@ -273,7 +345,7 @@ function outputExpression(fid, indent, node)
             for i = 1 : numel(node.line)
                 outputExpression(fid, indent, node.line(i));
                 if numel(node.line) > 1
-                    fprintf(fid, '\n');
+                    fprintf(fid, ',\n');
                     fprintf(fid, '%s', repmat(' ', 1, indent + 4));
                 end
             end

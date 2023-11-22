@@ -2,3 +2,4 @@
 test/*
 .DS_Store
 m2py/*
+*.pyc

@@ -5,19 +5,10 @@ classdef Colon < Expression
         end_ Expression
     end
     methods
-        function self = Colon(a, b, c)
-            switch nargin
-                case 0
-                case 2
-                    self.begin = a;
-                    self.end_ = b;
-                case 3
-                    self.begin = a;
-                    self.step = b;
-                    self.end_ = c;
-                otherwise
-                    error('colon');
-            end
+        function self = Colon(begin, step, end_)
+            self.begin = begin;
+            self.step = step;
+            self.end_ = end_;
         end
     end
 end
