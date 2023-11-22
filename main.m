@@ -569,10 +569,43 @@ function [i, node] = statement(tokens, i)
         i = i + 1;
     end
 end
+function [i, node] = variableDeclare(tokens, i)
+    % name type = default
+    if ~strcmp(tokens(i).type, 'identifier')
+        error('unexpected token');
+    end
+    name = tokens(i).token;
+    i = i + 1;
+    if strcmp(tokens(i).type, 'identifier')
+        type = tokens(i).token;
+        i = i + 1;
+    else
+        type = '';
+    end
+    if strcmp(tokens(i).type, 'assign')
+        i = i + 1;
+        [i, expr] = expression(tokens, i);
+    else
+        expr = Expression.empty();
+    end
+    if i <= numel(tokens) && strcmp(tokens(i).type, 'comment')
+        comment = tokens(i).token;
+        i = i + 1;
+    else
+        comment = [];
+    end
+    node = Variable(name, type, expr, comment);
+    while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline'))
+        i = i + 1;
+    end
+end
 function blocks = program(tokens)
     blocks = List();
     i = 1;
     while i <= numel(tokens)
+        while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
+            i = i + 1;
+        end
         [i, blk] = block(tokens, i);
         blocks = append(blocks, blk);
     end
@@ -599,7 +632,7 @@ function [i, node] = ifBlock(tokens, i)
     while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
         [i, head] = statement(tokens, i);
         args = List();
-        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).keyword, {'end', 'else', 'elseif'}))
+        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).token, {'end', 'else', 'elseif'}))
             [i, arg] = block(tokens, i);
             args = append(args, arg);
         end
@@ -617,7 +650,7 @@ function [i, node] = switchBlock(tokens, i)
     while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
         [i, head] = statement(tokens, i);
         args = List();
-        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).keyword, {'end', 'case', 'otherwise'}))
+        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).token, {'end', 'case', 'otherwise'}))
             [i, arg] = block(tokens, i);
             args = append(args, arg);
         end
@@ -633,7 +666,7 @@ function [i, node] = propertiesBlock(tokens, i)
     [i, head] = statement(tokens, i);
     props = List();
     while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        [i, prop] = statement(tokens, i);
+        [i, prop] = variableDeclare(tokens, i);
         props = props.append(prop);
     end
     [i, end_] = statement(tokens, i);
@@ -683,18 +716,13 @@ function [i, node] = classBlock(tokens, i)
     node = ClassDef(head, property, method, end_);
 end
 function [i, node] = block(tokens, i)
-    while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
-        i = i + 1;
-    end
-    if ~strcmp(tokens(i), 'keyword')
+    if ~strcmp(tokens(i).type, 'keyword')
         [i, node] = statement(tokens, i);
         return
     end
     switch tokens(i).token
         case {'return', 'continue', 'break'}
-            node = tokens(i);
-            i = i + 1;
-            return
+            [i, node] = statement(tokens, i);
         case 'for'
             [i, node] = controlBlock(tokens, i, 'for', @For);
         case 'while'
@@ -709,6 +737,9 @@ function [i, node] = block(tokens, i)
             [i, node] = classBlock(tokens, i);
         otherwise
             error('unexpected keyword');
+    end
+    while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'comma'))
+        i = i + 1;
     end
 end
 function t = Token(type, token)

@@ -1,7 +1,7 @@
 classdef List
     properties(Access=private)
-        list = {};
-        count = 0;
+        list = {}
+        count = 0
     end
     methods
         function self = append(self, item)

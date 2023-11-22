@@ -89,6 +89,20 @@ function outputSegment(fid, indent, node)
             outputSegment(fid, indent, node.head);
             outputNode(fid, indent + 4, node.fun);
             outputSegment(fid, indent, node.end_);
+        case 'Variable'
+            fprintf(fid, repmat(' ', 1, indent));
+            fprintf(fid, '%s', node.name);
+            if ~isempty(node.type)
+                fprintf(fid, ' %s', node.type);
+            end
+            if ~isempty(node.default)
+                fprintf(fid, ' = ');
+                outputExpression(fid, indent, node.default);
+            end
+            if ~isempty(node.comment)
+                fprintf(fid, ' %s', node.comment);
+            end
+            fprintf(fid, '\n');
         otherwise
             error('unexpected node');
     end

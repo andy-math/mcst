@@ -1,7 +1,7 @@
 classdef Properties < Segment
     properties
         head Statement
-        prop Statement
+        prop Variable
         end_ Statement
     end
     methods
