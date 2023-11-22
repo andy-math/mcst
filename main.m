@@ -51,12 +51,6 @@ for i = 1:numel(files)
         compareFile("mcst/"+files(i).name, "test/"+files(i).name);
     end
 end
-function [] = forTestFunction()
-    a.(1 + 1) = c;
-    @bb;
-    @(a, b, c)aa + bb;
-    1;
-end
 function compareFile(file1, file2)
     content1 = readFile(file1);
     content2 = readFile(file2);
