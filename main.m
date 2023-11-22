@@ -298,7 +298,7 @@ function [i, node] = lambda_(tokens, i)
                 error('unexpected token');
             end
             arg = Identifier(tokens(i).token);
-            args = append______________________________(args, arg);
+            args.append(arg);
             i = i + 1;
             if strcmp(tokens(i).type, 'comma')
                 i = i + 1;
