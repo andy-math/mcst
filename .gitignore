@@ -1,3 +1,4 @@
 *.asv
 test/*
 .DS_Store
+m2py/*

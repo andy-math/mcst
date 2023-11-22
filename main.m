@@ -38,7 +38,13 @@ if isfolder('test')
     rmdir('test','s');
 end
 mkdir('test');
-output('test/main.m', parseFile('main.m', table));
+if isfolder('m2py')
+    rmdir('m2py','s');
+end
+mkdir('m2py');
+node = parseFile('main.m', table);
+output('test/main.m', node);
+output('m2py/main.py', node);
 output('test/output.m', parseFile('output.m', table));
 output('test/List.m', parseFile('List.m', table));
 compareFile('main.m', 'test/main.m');
@@ -47,7 +53,8 @@ compareFile('List.m', 'test/List.m');
 files = dir('mcst');
 for i = 1:numel(files)
     if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
-        output("test/"+files(i).name, parseFile("mcst/"+files(i).name, table));
+        node = parseFile("mcst/"+files(i).name, table);
+        output("test/"+files(i).name, node);
         compareFile("mcst/"+files(i).name, "test/"+files(i).name);
     end
 end
