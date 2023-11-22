@@ -34,10 +34,14 @@ table = [
     {'lambda', '@'}
     {'newline', newline}
     ];
-output('main.test.m', parseFile('main.m', table));
-output('output.test.m', parseFile('output.m', table));
-compareFile('main.m', 'main.test.m');
-compareFile('output.m', 'output.test.m');
+if isfolder('test')
+    rmdir('test','s');
+end
+mkdir('test');
+output('test/main.m', parseFile('main.m', table));
+output('test/output.m', parseFile('output.m', table));
+compareFile('main.m', 'test/main.m');
+compareFile('output.m', 'test/output.m');
 function [] = forTestFunction()
     a.(1 + 1) = c;
     @bb;
@@ -194,7 +198,7 @@ function [i, node] = reference(tokens, i)
                 end
             case 'lparen'
                 i = i + 1;
-                args = {Expression.empty()};
+                args = List();
                 while ~strcmp(tokens(i).type, 'rparen')
                     if strcmp(tokens(i).type, 'colon')
                         args = append(args, Colon());
@@ -212,10 +216,10 @@ function [i, node] = reference(tokens, i)
                     end
                 end
                 i = i + 1;
-                node = PIndex(node, [args{:}]);
+                node = PIndex(node, args.toList(Expression.empty()));
             case 'lbrace'
                 i = i + 1;
-                args = {Expression.empty()};
+                args = List();
                 while ~strcmp(tokens(i).type, 'rbrace')
                     if strcmp(tokens(i).type, 'colon')
                         args = append(args, Colon());
@@ -233,14 +237,14 @@ function [i, node] = reference(tokens, i)
                     end
                 end
                 i = i + 1;
-                node = BIndex(node, [args{:}]);
+                node = BIndex(node, args.toList(Expression.empty()));
             otherwise
                 break
         end
     end
 end
 function [i, node] = matrixLine(tokens, i)
-    args = {Expression.empty()};
+    args = List();
     if strcmp(tokens(i).type, 'comma')
         i = i + 1;
     end
@@ -254,19 +258,19 @@ function [i, node] = matrixLine(tokens, i)
     if isempty(args)
         node = MatrixLine.empty();
     else
-        node = MatrixLine([args{:}]);
+        node = MatrixLine(args.toList(Expression.empty()));
     end
 end
-function [i, node] = matrixLiteral(tokens, i)
-    if ~strcmp(tokens(i).type, 'lsquare')
-        error('must be lsquare');
+function [i, node] = matrixLiteral(tokens, i, left, right, class)
+    if ~strcmp(tokens(i).type, left)
+        error(['must be ', left]);
     end
     i = i + 1;
-    args = {MatrixLine.empty()};
+    args = List();
     while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
         i = i + 1;
     end
-    while ~strcmp(tokens(i).type, 'rsquare')
+    while ~strcmp(tokens(i).type, right)
         [i, arg] = matrixLine(tokens, i);
         args = append(args, arg);
         while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
@@ -274,26 +278,7 @@ function [i, node] = matrixLiteral(tokens, i)
         end
     end
     i = i + 1;
-    node = Matrix([args{:}]);
-end
-function [i, node] = cellLiteral(tokens, i)
-    if ~strcmp(tokens(i).type, 'lbrace')
-        error('must be lsquare');
-    end
-    i = i + 1;
-    args = {MatrixLine.empty()};
-    while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
-        i = i + 1;
-    end
-    while ~strcmp(tokens(i).type, 'rbrace')
-        [i, arg] = matrixLine(tokens, i);
-        args = append(args, arg);
-        while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
-            i = i + 1;
-        end
-    end
-    i = i + 1;
-    node = Cell([args{:}]);
+    node = class(args.toList(MatrixLine.empty()));
 end
 function [i, node] = lambda(tokens, i)
     if ~strcmp(tokens(i).type, 'lambda')
@@ -302,7 +287,7 @@ function [i, node] = lambda(tokens, i)
     i = i + 1;
     if strcmp(tokens(i).type, 'lparen')
         i = i + 1;
-        args = {Identifier.empty()};
+        args = List();
         while ~strcmp(tokens(i).type, 'rparen')
             if ~strcmp(tokens(i).type, 'identifier')
                 error('unexpected token');
@@ -315,7 +300,7 @@ function [i, node] = lambda(tokens, i)
             end
         end
         i = i + 1;
-        args = [args{:}];
+        args = args.toList(Identifier.empty());
     else
         args = Identifier.empty();
     end
@@ -338,9 +323,9 @@ function [i, node] = operand(tokens, i)
             i = i + 1;
             node = Paren(node);
         case 'lsquare'
-            [i, node] = matrixLiteral(tokens, i);
+            [i, node] = matrixLiteral(tokens, i, 'lsquare', 'rsquare', @Matrix);
         case 'lbrace'
-            [i, node] = cellLiteral(tokens, i);
+            [i, node] = matrixLiteral(tokens, i, 'lbrace', 'rbrace', @Cell);
         case 'identifier'
             [i, node] = reference(tokens, i);
         case 'keyword'
@@ -542,7 +527,7 @@ function [i, node] = statement(tokens, i)
 end
 function statements = parseStatement(tokens)
     i = 1;
-    statements = {};
+    statements = List();
     while i <= numel(tokens)
         if i <= numel(tokens) && strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'semi')
             i = i + 1;
@@ -551,17 +536,17 @@ function statements = parseStatement(tokens)
         [i, stmt] = statement(tokens, i);
         statements = append(statements, stmt);
     end
-    statements = [statements{:}];
+    statements = statements.toList(Segment.empty());
 end
 function blocks = program(tokens)
     statements = parseStatement(tokens);
-    blocks = {};
+    blocks = List();
     i = 1;
     while i <= numel(statements)
         [i, blk] = block(statements, i);
         blocks = append(blocks, blk);
     end
-    blocks = [blocks{:}];
+    blocks = blocks.toList(Segment.empty());
 end
 function [i, node] = controlBlock(statements, i, token, class)
     if ~strcmp(statements(i).keyword, token)
@@ -569,30 +554,30 @@ function [i, node] = controlBlock(statements, i, token, class)
     end
     head = statements(i);
     i = i + 1;
-    args = {Segment.empty()};
+    args = List();
     while ~strcmp(statements(i).keyword, 'end')
         [i, arg] = block(statements, i);
         args = append(args, arg);
     end
-    node = class(head, [args{:}], statements(i));
+    node = class(head, args.toList(Segment.empty()), statements(i));
     i = i + 1;
 end
 function [i, node] = ifBlock(statements, i)
     if ~strcmp(statements(i).keyword, 'if')
         error('expect if');
     end
-    branch = {};
+    branch = List();
     while ~strcmp(statements(i).keyword, 'end')
         head = statements(i);
         i = i + 1;
-        args = {Statement.empty()};
+        args = List();
         while ~(strcmp(statements(i).keyword, 'end') || strcmp(statements(i).keyword, 'else') || strcmp(statements(i).keyword, 'elseif'))
             [i, arg] = block(statements, i);
             args = append(args, arg);
         end
-        branch = append(branch, IfBranch(head, [args{:}]));
+        branch = append(branch, IfBranch(head, args.toList(Statement.empty())));
     end
-    node = If([branch{:}], statements(i));
+    node = If(branch.toList(IfBranch.empty()), statements(i));
     i = i + 1;
 end
 function [i, node] = switchBlock(statements, i)
@@ -601,18 +586,18 @@ function [i, node] = switchBlock(statements, i)
     end
     expr = statements(i);
     i = i + 1;
-    branch = {};
+    branch = List();
     while ~strcmp(statements(i).keyword, 'end')
         head = statements(i);
         i = i + 1;
-        args = {Segment.empty()};
+        args = List();
         while ~(strcmp(statements(i).keyword, 'end') || strcmp(statements(i).keyword, 'case') || strcmp(statements(i).keyword, 'otherwise'))
             [i, arg] = block(statements, i);
             args = append(args, arg);
         end
-        branch = append(branch, SwitchCase(head, [args{:}]));
+        branch = append(branch, SwitchCase(head, args.toList(Segment.empty())));
     end
-    node = Switch(expr, [branch{:}], statements(i));
+    node = Switch(expr, branch.toList(SwitchCase.empty()), statements(i));
     i = i + 1;
 end
 function [i, node] = block(statements, i)

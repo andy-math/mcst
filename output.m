@@ -75,8 +75,6 @@ function outputSegment(fid, indent, node)
 end
 function outputExpression(fid, indent, node)
     switch class(node)
-        case 'NewLine'
-            fprintf(fid, '\n');
         case 'Literal'
             fprintf(fid, '%s', node.value);
         case 'Identifier'
@@ -221,5 +219,7 @@ function outputExpression(fid, indent, node)
             outputExpression(fid, indent, node.a);
             fprintf(fid, ' || ');
             outputExpression(fid, indent, node.b);
+        otherwise
+            error('unexpected node');
     end
 end
