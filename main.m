@@ -58,8 +58,6 @@ function compareFile(file1, file2)
     content2 = readFile(file2);
     content1 = split(replace(content1, ' ', ''), newline);
     content2 = split(replace(content2, ' ', ''), newline);
-    content1(content1 == "") = [];
-    content2(content2 == "") = [];
     if numel(content1) ~= numel(content2)
         warning('length of %s not equal with length of %s', file1, file2);
         return

@@ -1,5 +1,7 @@
 function m2py(filename, node)
     fid = fopen(filename, 'at+');
+    functions = arrayfun(@(x)isa(x, 'Function'), node);
+    node = [node(functions), node(~functions)];
     outputNode(fid, 0, node, []);
     fclose(fid);
 end
