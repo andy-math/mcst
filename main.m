@@ -565,128 +565,113 @@ function [i, node] = statement(tokens, i)
         comment = [];
     end
     node = Statement(keyword, modifiers, lvalue, rvalue, comment);
-end
-function statements = parseStatement(tokens)
-    i = 1;
-    statements = List();
-    while i <= numel(tokens)
-        if i <= numel(tokens) && strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'semi')
-            i = i + 1;
-            continue
-        end
-        [i, stmt] = statement(tokens, i);
-        statements = append(statements, stmt);
+    while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'comma') || strcmp(tokens(i).type, 'newline'))
+        i = i + 1;
     end
-    statements = statements.toList(Segment.empty());
 end
 function blocks = program(tokens)
-    statements = parseStatement(tokens);
     blocks = List();
     i = 1;
-    while i <= numel(statements)
-        [i, blk] = block(statements, i);
+    while i <= numel(tokens)
+        [i, blk] = block(tokens, i);
         blocks = append(blocks, blk);
     end
     blocks = blocks.toList(Segment.empty());
 end
-function [i, node] = controlBlock(statements, i, token, class)
-    if ~strcmp(statements(i).keyword, token)
+function [i, node] = controlBlock(tokens, i, token, class)
+    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, token))
         error(['expect ', token]);
     end
-    head = statements(i);
-    i = i + 1;
+    [i, head] = statement(tokens, i);
     args = List();
-    while ~strcmp(statements(i).keyword, 'end')
-        [i, arg] = block(statements, i);
+    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+        [i, arg] = block(tokens, i);
         args = append(args, arg);
     end
-    node = class(head, args.toList(Segment.empty()), statements(i));
-    i = i + 1;
+    [i, end_] = statement(tokens, i);
+    node = class(head, args.toList(Segment.empty()), end_);
 end
-function [i, node] = ifBlock(statements, i)
-    if ~strcmp(statements(i).keyword, 'if')
+function [i, node] = ifBlock(tokens, i)
+    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'if'))
         error('expect if');
     end
     branch = List();
-    while ~strcmp(statements(i).keyword, 'end')
-        head = statements(i);
-        i = i + 1;
+    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+        [i, head] = statement(tokens, i);
         args = List();
-        while ~(strcmp(statements(i).keyword, 'end') || strcmp(statements(i).keyword, 'else') || strcmp(statements(i).keyword, 'elseif'))
-            [i, arg] = block(statements, i);
+        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).keyword, {'end', 'else', 'elseif'}))
+            [i, arg] = block(tokens, i);
             args = append(args, arg);
         end
         branch = append(branch, IfBranch(head, args.toList(Statement.empty())));
     end
-    node = If(branch.toList(IfBranch.empty()), statements(i));
-    i = i + 1;
+    [i, end_] = statement(tokens, i);
+    node = If(branch.toList(IfBranch.empty()), end_);
 end
-function [i, node] = switchBlock(statements, i)
-    if ~strcmp(statements(i).keyword, 'switch')
+function [i, node] = switchBlock(tokens, i)
+    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'switch'))
         error('expect switch');
     end
-    expr = statements(i);
-    i = i + 1;
+    [i, expr] = statement(tokens, i);
     branch = List();
-    while ~strcmp(statements(i).keyword, 'end')
-        head = statements(i);
-        i = i + 1;
+    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+        [i, head] = statement(tokens, i);
         args = List();
-        while ~(strcmp(statements(i).keyword, 'end') || strcmp(statements(i).keyword, 'case') || strcmp(statements(i).keyword, 'otherwise'))
-            [i, arg] = block(statements, i);
+        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).keyword, {'end', 'case', 'otherwise'}))
+            [i, arg] = block(tokens, i);
             args = append(args, arg);
         end
         branch = append(branch, SwitchCase(head, args.toList(Segment.empty())));
     end
-    node = Switch(expr, branch.toList(SwitchCase.empty()), statements(i));
-    i = i + 1;
+    [i, end_] = statement(tokens, i);
+    node = Switch(expr, branch.toList(SwitchCase.empty()), end_);
 end
-function [i, node] = propertiesBlock(statements, i)
-    if ~strcmp(statements(i).keyword, 'properties')
+function [i, node] = propertiesBlock(tokens, i)
+    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'properties'))
         error('expect properties');
     end
-    head = statements(i);
-    i = i+1;
+    [i, head] = statement(tokens, i);
     props = List();
-    while ~strcmp(statements(i).keyword, 'end')
-        props = props.append(statements(i));
-        i = i+1;
+    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+        [i, prop] = statement(tokens, i);
+        props = props.append(prop);
     end
-    node = Properties(head, props.toList(Statement.empty()), statements(i));
-    i = i + 1;
+    [i, end_] = statement(tokens, i);
+    node = Properties(head, props.toList(Statement.empty()), end_);
 end
-function [i, node] = methodsBlock(statements, i)
-    if ~strcmp(statements(i).keyword, 'methods')
+function [i, node] = methodsBlock(tokens, i)
+    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'methods'))
         error('expect methods');
     end
-    head = statements(i);
-    i = i+1;
+    [i, head] = statement(tokens, i);
     meth = List();
-    while ~strcmp(statements(i).keyword, 'end')
-        if ~strcmp(statements(i).keyword, 'function')
+    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+        if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'function'))
             error('unexpected token');
         end
-        [i, fun] = block(statements, i);
+        [i, fun] = block(tokens, i);
         meth = meth.append(fun);
     end
-    node = Methods(head, meth.toList(Function.empty()), statements(i));
-    i = i + 1;
+    [i, end_] = statement(tokens, i);
+    node = Methods(head, meth.toList(Function.empty()), end_);
 end
-function [i, node] = classBlock(statements, i)
-    if ~strcmp(statements(i).keyword, 'classdef')
+function [i, node] = classBlock(tokens, i)
+    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'classdef'))
         error('expect classdef');
     end
-    head = statements(i);
-    i = i + 1;
+    [i, head] = statement(tokens, i);
     property = List();
     method = List();
-    while ~strcmp(statements(i).keyword, 'end')
-        switch statements(i).keyword
+    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+        if ~strcmp(tokens(i).type, 'keyword')
+            error('unexpected token');
+        end
+        switch tokens(i).token
             case 'properties'
-                [i, prop] = propertiesBlock(statements, i);
+                [i, prop] = propertiesBlock(tokens, i);
                 property = append(property, prop);
             case 'methods'
-                [i, meth] = methodsBlock(statements, i);
+                [i, meth] = methodsBlock(tokens, i);
                 method = append(method, meth);
             otherwise
                 error('unexpected keyword');
@@ -694,37 +679,36 @@ function [i, node] = classBlock(statements, i)
     end
     property = property.toList(Properties.empty());
     method = method.toList(Methods.empty());
-    node = ClassDef(head, property, method, statements(i));
-    i = i + 1;
+    [i, end_] = statement(tokens, i);
+    node = ClassDef(head, property, method, end_);
 end
-function [i, node] = block(statements, i)
-    if ~isa(statements(i), 'Statement')
-        error('unexpected token');
-    end
-    if isempty(statements(i).keyword)
-        node = statements(i);
+function [i, node] = block(tokens, i)
+    while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
         i = i + 1;
+    end
+    if ~strcmp(tokens(i), 'keyword')
+        [i, node] = statement(tokens, i);
         return
     end
-    switch statements(i).keyword
+    switch tokens(i).token
         case {'return', 'continue', 'break'}
-            node = statements(i);
+            node = tokens(i);
             i = i + 1;
             return
         case 'for'
-            [i, node] = controlBlock(statements, i, 'for', @For);
+            [i, node] = controlBlock(tokens, i, 'for', @For);
         case 'while'
-            [i, node] = controlBlock(statements, i, 'while', @While);
+            [i, node] = controlBlock(tokens, i, 'while', @While);
         case 'function'
-            [i, node] = controlBlock(statements, i, 'function', @Function);
+            [i, node] = controlBlock(tokens, i, 'function', @Function);
         case 'if'
-            [i, node] = ifBlock(statements, i);
+            [i, node] = ifBlock(tokens, i);
         case 'switch'
-            [i, node] = switchBlock(statements, i);
+            [i, node] = switchBlock(tokens, i);
         case 'classdef'
-            [i, node] = classBlock(statements, i);
+            [i, node] = classBlock(tokens, i);
         otherwise
-            error('unexpected token');
+            error('unexpected keyword');
     end
 end
 function t = Token(type, token)
