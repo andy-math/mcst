@@ -3,7 +3,6 @@ classdef RDivide < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = RDivide(a, b)
             self.a = a;

@@ -44,7 +44,6 @@ output('test/List.m', parseFile('List.m', table));
 compareFile('main.m', 'test/main.m');
 compareFile('output.m', 'test/output.m');
 compareFile('List.m', 'test/List.m');
-return
 files = dir('mcst');
 for i = 1:numel(files)
     if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))

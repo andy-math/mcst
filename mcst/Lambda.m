@@ -3,12 +3,10 @@ classdef Lambda < Expression
         args Identifier
         expr Expression
     end
-    
     methods
-        function self = Lambda(args,expr)
+        function self = Lambda(args, expr)
             self.args = args;
             self.expr = expr;
         end
     end
 end
-

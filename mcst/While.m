@@ -4,9 +4,8 @@ classdef While < Segment
         body Segment
         end_ Segment
     end
-    
     methods
-        function self = While(head,body,end_)
+        function self = While(head, body, end_)
             self.head = head;
             self.body = body;
             self.end_ = end_;

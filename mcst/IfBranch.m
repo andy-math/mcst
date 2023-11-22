@@ -4,10 +4,9 @@ classdef IfBranch < Segment
         body Segment
     end
     methods
-        function self = IfBranch(head,body)
+        function self = IfBranch(head, body)
             self.head = head;
             self.body = body;
         end
     end
 end
-

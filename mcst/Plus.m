@@ -3,7 +3,6 @@ classdef Plus < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = Plus(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef Plus < Expression
         end
     end
 end
-

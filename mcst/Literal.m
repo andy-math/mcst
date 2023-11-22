@@ -8,4 +8,3 @@ classdef Literal < Expression
         end
     end
 end
-

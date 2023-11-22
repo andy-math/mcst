@@ -3,7 +3,6 @@ classdef SwitchCase < Segment
         head Segment
         body Segment
     end
-    
     methods
         function self = SwitchCase(head, body)
             self.head = head;
@@ -11,4 +10,3 @@ classdef SwitchCase < Segment
         end
     end
 end
-

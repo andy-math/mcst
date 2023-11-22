@@ -3,7 +3,6 @@ classdef And < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = And(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef And < Expression
         end
     end
 end
-

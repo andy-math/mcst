@@ -8,4 +8,3 @@ classdef Not < Expression
         end
     end
 end
-

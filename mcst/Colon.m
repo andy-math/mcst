@@ -4,7 +4,6 @@ classdef Colon < Expression
         step Expression
         end_ Expression
     end
-    
     methods
         function self = Colon(a, b, c)
             switch nargin
@@ -22,4 +21,3 @@ classdef Colon < Expression
         end
     end
 end
-

@@ -6,7 +6,6 @@ classdef Statement < Segment
         rvalue Expression
         comment char
     end
-    
     methods
         function self = Statement(keyword, modifier, lvalue, rvalue, comment)
             self.keyword = keyword;
@@ -17,4 +16,3 @@ classdef Statement < Segment
         end
     end
 end
-

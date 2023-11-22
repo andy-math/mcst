@@ -3,7 +3,6 @@ classdef EQ < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = EQ(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef EQ < Expression
         end
     end
 end
-

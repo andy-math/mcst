@@ -1,2 +1,2 @@
-classdef(Abstract) Block < Node
+classdef (Abstract)Block < Node
 end

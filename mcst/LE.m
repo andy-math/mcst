@@ -3,7 +3,6 @@ classdef LE < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = LE(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef LE < Expression
         end
     end
 end
-

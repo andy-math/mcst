@@ -3,7 +3,6 @@ classdef Times < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = Times(a, b)
             self.a = a;

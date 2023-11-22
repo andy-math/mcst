@@ -3,7 +3,6 @@ classdef GE < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = GE(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef GE < Expression
         end
     end
 end
-

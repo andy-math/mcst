@@ -3,7 +3,6 @@ classdef LT < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = LT(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef LT < Expression
         end
     end
 end
-

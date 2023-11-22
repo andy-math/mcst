@@ -10,4 +10,3 @@ classdef BIndex < Expression
         end
     end
 end
-

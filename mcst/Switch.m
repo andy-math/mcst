@@ -5,7 +5,7 @@ classdef Switch < Segment
         end_ Segment
     end
     methods
-        function self = Switch(head,body,end_)
+        function self = Switch(head, body, end_)
             self.head = head;
             self.body = body;
             self.end_ = end_;

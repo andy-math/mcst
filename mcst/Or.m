@@ -3,12 +3,10 @@ classdef Or < Expression
         a Expression
         b Expression
     end
-    
     methods
-        function self = Or(a,b)
+        function self = Or(a, b)
             self.a = a;
             self.b = b;
         end
     end
 end
-

@@ -3,7 +3,6 @@ classdef MLDivide < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = MLDivide(a, b)
             self.a = a;

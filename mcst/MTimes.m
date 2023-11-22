@@ -3,7 +3,6 @@ classdef MTimes < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = MTimes(a, b)
             self.a = a;

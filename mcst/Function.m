@@ -4,9 +4,8 @@ classdef Function < Segment
         body Segment
         end_ Segment
     end
-    
     methods
-        function self = Function(head,body,end_)
+        function self = Function(head, body, end_)
             self.head = head;
             self.body = body;
             self.end_ = end_;

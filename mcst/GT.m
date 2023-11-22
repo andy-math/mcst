@@ -3,7 +3,6 @@ classdef GT < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = GT(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef GT < Expression
         end
     end
 end
-

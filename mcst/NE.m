@@ -3,7 +3,6 @@ classdef NE < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = NE(a, b)
             self.a = a;

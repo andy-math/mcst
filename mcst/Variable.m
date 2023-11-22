@@ -14,4 +14,3 @@ classdef Variable < Segment
         end
     end
 end
-

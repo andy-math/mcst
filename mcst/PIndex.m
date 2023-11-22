@@ -1,4 +1,4 @@
- classdef PIndex < Expression
+classdef PIndex < Expression
     properties
         value Expression
         index Expression
@@ -10,4 +10,3 @@
         end
     end
 end
-

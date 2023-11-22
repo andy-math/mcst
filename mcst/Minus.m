@@ -3,7 +3,6 @@ classdef Minus < Expression
         a Expression
         b Expression
     end
-    
     methods
         function self = Minus(a, b)
             self.a = a;
@@ -11,4 +10,3 @@ classdef Minus < Expression
         end
     end
 end
-
