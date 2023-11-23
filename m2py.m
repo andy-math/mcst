@@ -165,9 +165,6 @@ function env = outputSegment(fid, indent, node, retval, env)
             end
             if ~isempty(node.rvalue)
                 outputExpression(fid, indent, node.rvalue, env);
-                if isempty(node.keyword)
-                    fprintf(fid, ';');
-                end
             end
             if ismember(node.keyword, {'if', 'elseif', 'else', 'while', 'for'})
                 fprintf(fid, ':');
