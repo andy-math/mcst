@@ -40,13 +40,13 @@ end
 mkdir('m2py/nodes');
 fid = fopen('m2py/main.py', 'wt+');
 files = dir('mcst');
-for i = 1:numel(files)
+for i = 1 : numel(files)
     if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
-        node = parseFile("mcst/"+files(i).name, table);
-        output("test/"+files(i).name, node);
-        m2py("m2py/nodes/"+files(i).name(1:end-2)+".py", node);
-        fprintf(fid, 'from m2py.nodes.%s import %s\n', files(i).name(1:end-2), files(i).name(1:end-2));
-        compareFile("mcst/"+files(i).name, "test/"+files(i).name);
+        node = parseFile("mcst/" + files(i).name, table);
+        output("test/" + files(i).name, node);
+        m2py("m2py/nodes/" + files(i).name(1 : end - 2) + ".py", node);
+        fprintf(fid, 'from m2py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2));
+        compareFile("mcst/" + files(i).name, "test/" + files(i).name);
     end
 end
 fclose(fid);
@@ -501,16 +501,16 @@ function [i, node] = expression(tokens, i)
     [i, node] = logicalOr(tokens, i);
 end
 function [i, node] = modifier(tokens, i)
-    if ~strcmp(tokens(i).type,'identifier')
+    if ~strcmp(tokens(i).type, 'identifier')
         error('unexpected token');
     end
     rvalue = Identifier(tokens(i).token);
-    i = i+1;
-    if strcmp(tokens(i).type,'assign')
-        i = i+1;
+    i = i + 1;
+    if strcmp(tokens(i).type, 'assign')
+        i = i + 1;
         lvalue = rvalue;
         rvalue = Identifier(tokens(i).token);
-        i = i+1;
+        i = i + 1;
     else
         lvalue = Identifier.empty();
     end
