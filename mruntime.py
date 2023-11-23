@@ -142,7 +142,7 @@ def mparen(fun: Any, *index: Any) -> Any:
     return fun
 
 
-def configure() -> tuple[Literal["test2"], Literal["m2py2"]]:
+def configure() -> tuple[Literal["test2"], Literal["py2"]]:
     return "test2", "py2"
 
 
