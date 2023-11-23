@@ -1,7 +1,8 @@
 *.asv
 test/*
 .DS_Store
-m2py/*
+py/*
 *.pyc
 test2/*
-m2py2/*
+py2/*
+py/nodes/And.py

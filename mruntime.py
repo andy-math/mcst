@@ -147,7 +147,7 @@ def mparen(fun: Any, *index: Any) -> Any:
 
 
 def configure() -> tuple[Literal["test2"], Literal["m2py2"]]:
-    return "test2", "m2py2"
+    return "test2", "py2"
 
 
 class File:
@@ -164,7 +164,7 @@ def repmat(c: str, a: Literal[1], b: int) -> str:
 
 
 def isa(a: Any, b: str) -> bool:
-    mod = importlib.import_module(f"m2py.nodes.{b}")
+    mod = importlib.import_module(f"py.nodes.{b}")
     return isinstance(a, getattr(mod, b))
 
 
@@ -178,6 +178,10 @@ def cellfun(fun: Callable[..., Any], a: list[Any], *b: list[Any]) -> list[Any]:
 
 
 arrayfun = cellfun
+
+
+def mparenl(a: Any, b: Callable[[int], Any]) -> Any:
+    return mparen(a, *b(len(a)))
 
 
 def struct() -> dict[Any, Any]:

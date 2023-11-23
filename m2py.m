@@ -83,6 +83,42 @@ function env = patchAssign(env, node)
             error('unexpected node');
     end
 end
+function b = endLambda(node)
+    if isempty(node)
+        b = false;
+        return
+    end
+    if isList(node)
+        for i = 1 : numel(node)
+            if endLambda(node(i))
+                b = true;
+                return
+            end
+        end
+        b = false;
+        return
+    end
+    switch class(node)
+        case 'Literal'
+            b = false;
+        case 'Identifier'
+            b = strcmp(node.identifier, 'end');
+        case 'Colon'
+            b = endLambda(node.begin) || endLambda(node.end_) || endLambda(node.step);
+        case {'Plus', 'Minus'}
+            b = endLambda(node.a) || endLambda(node.b);
+        case 'Not'
+            b = endLambda(node.value);
+        case 'PIndex'
+            b = false;
+        case 'Matrix'
+            b = endLambda(node.line);
+        case 'MatrixLine'
+            b = endLambda(node.item);
+        otherwise
+            error('unexpected token');
+    end
+end
 function env = outputSegment(fid, indent, node, retval, env)
     assert(nargin == 5);
     assert(nargout == 1);
@@ -194,7 +230,7 @@ function env = outputSegment(fid, indent, node, retval, env)
             env = patchAssign(env, node);
         case 'ClassDef'
             if isa(node.head.rvalue, 'LT') && isa(node.head.rvalue.b, 'Identifier')
-                fprintf(fid, 'from m2py.nodes.');
+                fprintf(fid, 'from py.nodes.');
                 outputExpression(fid, indent, node.head.rvalue.b, env);
                 fprintf(fid, ' import ');
                 outputExpression(fid, indent, node.head.rvalue.b, env);
@@ -367,13 +403,26 @@ function outputExpression(fid, indent, node, env)
                     end
                 end
                 fprintf(fid, ')');
+            elseif endLambda(node.index)
+                fprintf(fid, 'mparenl(');
+                outputExpression(fid, indent, node.value, env);
+                if ~isempty(node.index)
+                    fprintf(fid, ', lambda end: (');
+                    for i = 1 : numel(node.index)
+                        outputExpression(fid, indent, node.index(i), env);
+                        if i < numel(node.index)
+                            fprintf(fid, ', ');
+                        end
+                    end
+                    if numel(node.index) == 1
+                        fprintf(fid, ',');
+                    end
+                    fprintf(fid, ')');
+                end
+                fprintf(fid, ')');
             else
                 fprintf(fid, 'mparen(');
-                if isa(node.value, 'Identifier') && strcmp(node.value.identifier, 'class')
-                    fprintf(fid, 'type');
-                else
-                    outputExpression(fid, indent, node.value, env);
-                end
+                outputExpression(fid, indent, node.value, env);
                 if ~isempty(node.index)
                     fprintf(fid, ', ');
                     for i = 1 : numel(node.index)
