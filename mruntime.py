@@ -106,10 +106,6 @@ def fprintf(file: Union[Literal[1], TextIOWrapper], pattern: str, *args: str) ->
         print((pattern.replace("\\n", "\n") % args), end="", file=file)
 
 
-def m2py(*args: Any) -> None:
-    pass
-
-
 def replace(a: str, b: str, c: str) -> str:
     return a.replace(b, c)
 
@@ -209,6 +205,7 @@ class List:
 
 newline = "\n"
 numel = len
+true = True
 false = False
 string = str
 

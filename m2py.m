@@ -1,16 +1,26 @@
 function m2py(filename, node)
     fid = fopen(filename, 'at+');
     fprintf(fid, 'from mruntime import *\n');
-    functions = arrayfun(@(x)isa(x, 'Function'), node);
-    node = [node(functions), node(~functions)];
-    [~] = outputNode(fid, 0, node, [], struct());
+    newNode = List();
+    for i = 1:numel(node)
+        if isa(node(i), 'Function')
+            newNode.append(node(i));
+        end
+    end
+    for i = 1:numel(node)
+        if ~isa(node(i), 'Function')
+            newNode.append(node(i));
+        end
+    end
+    node = newNode.toList(Segment.empty());
+    ignore = outputNode(fid, 0, node, [], struct()); %#ok<NASGU>
     fclose(fid);
 end
 function env = outputNode(fid, indent, node, retval, env)
     assert(nargin == 5);
     assert(nargout == 1);
     if isempty(node)
-    elseif numel(node) > 1
+    elseif isList(node)
         for i = 1 : numel(node)
             env = outputNode(fid, indent, node(i), retval, env);
         end
@@ -61,7 +71,7 @@ function env = patchAssign(env, node)
     if isempty(node)
         return
     end
-    if numel(node) > 1
+    if isList(node)
         for i = 1:numel(node)
             env = patchAssign(env, node(i));
         end
@@ -147,7 +157,7 @@ function env = outputSegment(fid, indent, node, retval, env)
                 if isa(node.head.lvalue, 'Identifier')
                     fprintf(fid, '%snargout = 1\n', repmat(' ', 1, indent + 4));
                 else
-                    fprintf(fid, '%snargout = %s\n', repmat(' ', 1, indent + 4), num2str(numel(node.head.lvalue.line.item)));
+                    fprintf(fid, '%snargout = %s\n', repmat(' ', 1, indent + 4), num2str(numel(node.head.lvalue.line(1).item)));
                 end
             end
             newEnv = outputNode(fid, indent + 4, node.body, retval, newEnv);
