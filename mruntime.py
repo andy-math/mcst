@@ -1,5 +1,7 @@
 from io import TextIOWrapper
-from typing import Literal, NoReturn, Any, Union
+from typing import Literal, NoReturn, Any, Union, Callable
+import importlib
+import shutil
 
 import os
 
@@ -17,15 +19,23 @@ def close(fig: str) -> None:
 
 
 def isfolder(dir: str) -> bool:
-    return False
+    return os.path.isdir(dir)
+
+
+def isfile(file: str) -> bool:
+    return os.path.isfile(file)
+
+
+def delete(file: str) -> None:
+    os.remove(file)
 
 
 def mkdir(dir: str) -> None:
-    pass
+    os.mkdir(dir)
 
 
-def rmdir(dir: str) -> None:
-    pass
+def rmdir(dir: str, s: Literal["s"]) -> None:
+    shutil.rmtree(dir)
 
 
 def fopen(filename: str, mode: Literal["rt", "wt+"] = "rt") -> TextIOWrapper:
@@ -61,7 +71,7 @@ def strcmp(a: str, b: str) -> bool:
 
 
 def isempty(a: list[Any]) -> bool:
-    return len(a) == 0
+    return hasattr(a, "__len__") and len(a) == 0
 
 
 def size(a: list[Any], b: int) -> int:
@@ -91,13 +101,9 @@ def endsWith(a: str, b: str) -> bool:
 
 def fprintf(file: Union[Literal[1], TextIOWrapper], pattern: str, *args: str) -> None:
     if file == 1:
-        print(pattern % args)
+        print("\x1b[32m" + (pattern.replace("\\n", "\n") % args) + "\x1b[0m", end="")
     else:
-        print(pattern % args)
-
-
-def output(*args: Any) -> None:
-    pass
+        print((pattern.replace("\\n", "\n") % args), end="", file=file)
 
 
 def m2py(*args: Any) -> None:
@@ -126,7 +132,7 @@ def mat2str(a: Any) -> str:
 
 
 def warning(pattern: str, *args: str) -> None:
-    print(pattern % args)
+    print("\x1b[31m" + (pattern % args) + "\x1b[0m")
 
 
 def mparen(fun: Any, *index: Any) -> Any:
@@ -151,6 +157,24 @@ class File:
 
 def dir(path: str) -> list[File]:
     return [File(x) for x in os.listdir(path)]
+
+
+def repmat(c: str, a: Literal[1], b: int) -> str:
+    return c * b
+
+
+def isa(a: Any, b: str) -> bool:
+    mod = importlib.import_module(f"m2py.nodes.{b}")
+    return isinstance(a, getattr(mod, b))
+
+
+def isList(a: Any) -> bool:
+    return isinstance(a, list)
+
+
+def cellfun(fun: Callable[..., Any], a: list[Any], *b: list[Any]) -> list[Any]:
+    assert all(len(a) == len(x) for x in b)
+    return [fun(*x) for x in zip(a, *b)]
 
 
 class List:

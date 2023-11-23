@@ -50,11 +50,17 @@ for i = 1 : numel(files)
         compareFile("mcst/" + files(i).name, testdir + "/" + files(i).name);
     end
 end
+fprintf(fid, 'from m2py.output import output\n');
 fclose(fid);
+if isfile(pydir+"/output.py")
+    delete(pydir+"/output.py");
+end
 node = parseFile('main.m', table);
 output(testdir + "/main.m", node);
 m2py(pydir + "/main.py", node);
-output(testdir + "/output.m", parseFile('output.m', table));
+node = parseFile('output.m', table);
+output(testdir + "/output.m", node);
+m2py(pydir + "/output.py", node);
 output(testdir + "/List.m", parseFile('List.m', table));
 compareFile('main.m', testdir + "/main.m");
 compareFile('output.m', testdir + "/output.m");
@@ -68,7 +74,7 @@ function compareFile(file1, file2)
         warning('length of %s not equal with length of %s', file1, file2);
         return
     end
-    d = find(string(content1) ~= string(content2));
+    d = find(cellfun(@(a, b)~strcmp(a, b), content1, content2));
     if ~isempty(d)
         warning('%s vs %s: diff found in line %s\n', file1, file2, mat2str(d));
         return

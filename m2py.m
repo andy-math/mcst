@@ -132,6 +132,9 @@ function env = outputSegment(fid, indent, node, retval, env)
         case 'IfBranch'
             env = outputSegment(fid, indent, node.head, retval, env);
             env = outputNode(fid, indent + 4, node.body, retval, env);
+            if isempty(node.body)
+                fprintf(fid, '%spass\n', repmat(' ', 1, indent + 4));
+            end
         case 'Switch'
             value = node.head.rvalue;
             fprintf(fid, '%sif False and ', repmat(' ', 1, indent));
@@ -143,7 +146,11 @@ function env = outputSegment(fid, indent, node, retval, env)
         case 'Statement'
             fprintf(fid, repmat(' ', 1, indent));
             if ~isempty(node.keyword)
-                fprintf(fid, '%s', node.keyword);
+                if strcmp(node.keyword, 'elseif')
+                    fprintf(fid, 'elif');
+                else
+                    fprintf(fid, '%s', node.keyword);
+                end
                 if ~isempty(node.rvalue)
                     fprintf(fid, ' ');
                 end
@@ -237,7 +244,7 @@ function env = outputSegment(fid, indent, node, retval, env)
             end
             fprintf(fid, '%s@staticmethod\n', repmat(' ', 1, indent + 4));
             fprintf(fid, '%sdef empty():\n', repmat(' ', 1, indent + 4));
-            fprintf(fid, '%spass\n', repmat(' ', 1, indent + 8));
+            fprintf(fid, '%sreturn []\n', repmat(' ', 1, indent + 8));
             % outputSegment(fid, indent, node.head, retval);
             % outputNode(fid, indent + 4, node.property, retval);
             % outputNode(fid, indent + 4, node.method, retval);
@@ -339,7 +346,11 @@ function outputExpression(fid, indent, node, env)
             end
         case 'PIndex'
             if isa(node.value, 'Identifier') && ~(isfield(env, node.value.identifier) && strcmp(env.(node.value.identifier), 'identifier'))
-                outputExpression(fid, indent, node.value, env);
+                if isa(node.value, 'Identifier') && strcmp(node.value.identifier, 'class')
+                    fprintf(fid, 'type');
+                else
+                    outputExpression(fid, indent, node.value, env);
+                end
                 fprintf(fid, '(');
                 for i = 1 : numel(node.index)
                     outputExpression(fid, indent, node.index(i), env);
@@ -350,7 +361,11 @@ function outputExpression(fid, indent, node, env)
                 fprintf(fid, ')');
             else
                 fprintf(fid, 'mparen(');
-                outputExpression(fid, indent, node.value, env);
+                if isa(node.value, 'Identifier') && strcmp(node.value.identifier, 'class')
+                    fprintf(fid, 'type');
+                else
+                    outputExpression(fid, indent, node.value, env);
+                end
                 if ~isempty(node.index)
                     fprintf(fid, ', ');
                     for i = 1 : numel(node.index)
@@ -361,6 +376,9 @@ function outputExpression(fid, indent, node, env)
                     end
                 end
                 fprintf(fid, ')');
+            end
+            if isa(node.value, 'Identifier') && strcmp(node.value.identifier, 'class')
+                fprintf(fid, '.__name__');
             end
         case 'BIndex'
             outputExpression(fid, indent, node.value, env);

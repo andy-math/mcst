@@ -5,7 +5,7 @@ function output(filename, node)
 end
 function outputNode(fid, indent, node)
     if isempty(node)
-    elseif numel(node) > 1
+    elseif isList(node)
         for i = 1 : numel(node)
             outputNode(fid, indent, node(i));
         end
