@@ -263,6 +263,8 @@ function outputExpression(fid, indent, node)
                 fprintf(fid, '=');
             end
             outputExpression(fid, indent, node.rvalue);
+        case 'Dismiss'
+            fprintf(fid, '~');
         otherwise
             error('unexpected node');
     end

@@ -55,16 +55,22 @@ fclose(fid);
 if isfile(pydir+"/output.py")
     delete(pydir+"/output.py");
 end
+%
 node = parseFile('main.m', table);
 output(testdir + "/main.m", node);
 m2py(pydir + "/main.py", node);
+compareFile('main.m', testdir + "/main.m");
+%
 node = parseFile('output.m', table);
 output(testdir + "/output.m", node);
 m2py(pydir + "/output.py", node);
-output(testdir + "/List.m", parseFile('List.m', table));
-compareFile('main.m', testdir + "/main.m");
 compareFile('output.m', testdir + "/output.m");
+%
+output(testdir + "/List.m", parseFile('List.m', table));
 compareFile('List.m', testdir + "/List.m");
+%
+output(testdir + "/m2py.m", parseFile('m2py.m', table));
+compareFile('m2py.m', testdir + "/m2py.m");
 function compareFile(file1, file2)
     content1 = readFile(file1);
     content2 = readFile(file2);
@@ -263,8 +269,13 @@ function [i, node] = matrixLine(tokens, i)
     if strcmp(tokens(i).type, 'comma')
         i = i + 1;
     end
-    while ~(strcmp(tokens(i).type, 'rsquare') || strcmp(tokens(i).type, 'rbrace') || strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'semi'))
-        [i, arg] = expression(tokens, i);
+    while ~ismember(tokens(i).type, {'rsquare', 'rbrace', 'newline', 'semi'})
+        if strcmp(tokens(i).type, 'not') && ismember(tokens(i + 1).type, {'rsquare', 'rbrace', 'newline', 'semi', 'comma'})
+            arg = Dismiss();
+            i = i + 1;
+        else
+            [i, arg] = expression(tokens, i);
+        end
         args.append(arg);
         if strcmp(tokens(i).type, 'comma')
             i = i + 1;
