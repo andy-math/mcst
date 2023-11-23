@@ -34,30 +34,31 @@ table = [
     {'lambda', '@'}
     {'newline', newline}
     ];
-if isfolder('m2py/nodes')
-    rmdir('m2py/nodes', 's');
+[testdir, pydir] = configure();
+if isfolder(pydir+"/nodes")
+    rmdir(pydir+"/nodes", 's');
 end
-mkdir('m2py/nodes');
-fid = fopen('m2py/main.py', 'wt+');
+mkdir(pydir+"/nodes");
+fid = fopen(pydir+"/main.py", 'wt+');
 files = dir('mcst');
 for i = 1 : numel(files)
     if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
         node = parseFile("mcst/" + files(i).name, table);
-        output("test/" + files(i).name, node);
-        m2py("m2py/nodes/" + files(i).name(1 : end - 2) + ".py", node);
+        output(testdir + "/" + files(i).name, node);
+        m2py(pydir + "/nodes/" + files(i).name(1 : end - 2) + ".py", node);
         fprintf(fid, 'from m2py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2));
-        compareFile("mcst/" + files(i).name, "test/" + files(i).name);
+        compareFile("mcst/" + files(i).name, testdir + "/" + files(i).name);
     end
 end
 fclose(fid);
 node = parseFile('main.m', table);
-output('test/main.m', node);
-m2py('m2py/main.py', node);
-output('test/output.m', parseFile('output.m', table));
-output('test/List.m', parseFile('List.m', table));
-compareFile('main.m', 'test/main.m');
-compareFile('output.m', 'test/output.m');
-compareFile('List.m', 'test/List.m');
+output(testdir + "/main.m", node);
+m2py(pydir + "/main.py", node);
+output(testdir + "/output.m", parseFile('output.m', table));
+output(testdir + "/List.m", parseFile('List.m', table));
+compareFile('main.m', testdir + "/main.m");
+compareFile('output.m', testdir + "/output.m");
+compareFile('List.m', testdir + "/List.m");
 function compareFile(file1, file2)
     content1 = readFile(file1);
     content2 = readFile(file2);

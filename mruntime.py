@@ -1,6 +1,8 @@
 from io import TextIOWrapper
 from typing import Literal, NoReturn, Any, Union
 
+import os
+
 
 def clc() -> None:
     pass
@@ -136,6 +138,19 @@ def mparen(fun: Any, *index: Any) -> Any:
         else:
             fun = fun[i - 1]
     return fun
+
+
+def configure() -> tuple[Literal["test2"], Literal["m2py2"]]:
+    return "test2", "m2py2"
+
+
+class File:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+def dir(path: str) -> list[File]:
+    return [File(x) for x in os.listdir(path)]
 
 
 class List:
