@@ -177,6 +177,21 @@ def cellfun(fun: Callable[..., Any], a: list[Any], *b: list[Any]) -> list[Any]:
     return [fun(*x) for x in zip(a, *b)]
 
 
+arrayfun = cellfun
+
+
+def struct() -> dict[Any, Any]:
+    return {}
+
+
+def isfield(d: dict[Any, Any], k: Any) -> bool:
+    return k in d
+
+
+def num2str(a: int) -> str:
+    return str(a)
+
+
 class List:
     def __init__(self) -> None:
         self.list: list[Any] = list()

@@ -78,6 +78,7 @@ function env = patchAssign(env, node)
             env = patchAssign(env, node.value);
         case 'Identifier'
             env.(node.identifier) = 'identifier';
+        case 'Dismiss'
         otherwise
             error('unexpected node');
     end
@@ -105,7 +106,14 @@ function env = outputSegment(fid, indent, node, retval, env)
             else
                 outputExpression(fid, indent, retval, env);
             end
-            fprintf(fid, '\n');
+            fprintf(fid, '\n%snargin = %s\n', repmat(' ', 1, indent + 4), num2str(numel(node.head.rvalue.index)));
+            if ~isempty(node.head.lvalue)
+                if isa(node.head.lvalue, 'Identifier')
+                    fprintf(fid, '%snargout = 1\n', repmat(' ', 1, indent + 4));
+                else
+                    fprintf(fid, '%snargout = %s\n', repmat(' ', 1, indent + 4), num2str(numel(node.head.lvalue.line.item)));
+                end
+            end
             newEnv = outputNode(fid, indent + 4, node.body, retval, newEnv);
             fprintf(fid, '%sreturn', repmat(' ', 1, indent + 4));
             if ~isempty(retval)
@@ -290,13 +298,13 @@ function outputExpression(fid, indent, node, env)
             fprintf(fid, '%s', node.identifier);
         case 'Field'
             outputExpression(fid, indent, node.value, env);
-            fprintf(fid, '.');
-            if ~isa(node.field, 'Identifier')
-                fprintf(fid, '(');
-            end
-            outputExpression(fid, indent, node.field, env);
-            if ~isa(node.field, 'Identifier')
-                fprintf(fid, ')');
+            if isa(node.field, 'Identifier')
+                fprintf(fid, '.');
+                outputExpression(fid, indent, node.field, env);
+            else
+                fprintf(fid, '[');
+                outputExpression(fid, indent, node.field, env);
+                fprintf(fid, ']');
             end
         case 'Paren'
             fprintf(fid, '(');
@@ -470,6 +478,8 @@ function outputExpression(fid, indent, node, env)
                 fprintf(fid, '=');
             end
             outputExpression(fid, indent, node.rvalue, env);
+        case 'Dismiss'
+            fprintf(fid, '_');
         otherwise
             error('unexpected node');
     end

@@ -55,6 +55,10 @@ fclose(fid);
 if isfile(pydir+"/output.py")
     delete(pydir+"/output.py");
 end
+fid = fopen(pydir+"/m2py.py", 'wt+');
+fprintf(fid, 'from m2py.nodes.Matrix import Matrix\n');
+fprintf(fid, 'from m2py.nodes.MatrixLine import MatrixLine\n');
+fclose(fid);
 %
 node = parseFile('main.m', table);
 output(testdir + "/main.m", node);
@@ -69,7 +73,9 @@ compareFile('output.m', testdir + "/output.m");
 output(testdir + "/List.m", parseFile('List.m', table));
 compareFile('List.m', testdir + "/List.m");
 %
-output(testdir + "/m2py.m", parseFile('m2py.m', table));
+node = parseFile('m2py.m', table);
+output(testdir + "/m2py.m", node);
+m2py(pydir + "/m2py.py", node);
 compareFile('m2py.m', testdir + "/m2py.m");
 function compareFile(file1, file2)
     content1 = readFile(file1);
