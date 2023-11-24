@@ -16,6 +16,12 @@ classdef MCSTTest < matlab.unittest.TestCase
         function testOutputM(self)
             self.verifyEqual(MCSTTest.readFile('output.m'), MCSTTest.readFile('test/output.m'));
         end
+        function testMainM2(self)
+            self.verifyEqual(MCSTTest.readFile('test/main.m'), MCSTTest.readFile('test2/main.m'));
+        end
+        function testOutputM2(self)
+            self.verifyEqual(MCSTTest.readFile('test/output.m'), MCSTTest.readFile('test2/output.m'));
+        end
         function testMainPy(self)
             self.verifyEqual(MCSTTest.readFile('py/main.py'), MCSTTest.readFile('py2/main.py'));
         end
