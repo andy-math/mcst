@@ -1,5 +1,15 @@
 classdef MCSTTest < matlab.unittest.TestCase
+    methods
+        function self = MCSTTest()
+            self@matlab.unittest.TestCase();
+            MCSTTest.init();
+        end
+    end
     methods(Static)
+        function init()
+            main();
+            system('export PYTHONPATH=.; /usr/local/bin/python3.9 test_m/py/main.py');
+        end
         function content = readFile(filename)
             fid = fopen(filename);
             content = native2unicode(fread(fid).');

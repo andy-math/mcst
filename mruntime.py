@@ -214,5 +214,6 @@ numel = len
 true = True
 false = False
 string = str
+disp = print
 
 del Literal

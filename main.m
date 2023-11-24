@@ -93,7 +93,7 @@ function compareFile(file1, file2)
         warning('%s vs %s: diff found in line %s\n', file1, file2, mat2str(d));
         return
     end
-    fprintf(1, '%s vs %s: equal without space\n', file1, file2);
+    disp(file1 + " vs " + file2 + ": equal without space");
 end
 function content = readFile(filename)
     fid = fopen(filename);
