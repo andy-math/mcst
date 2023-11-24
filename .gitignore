@@ -1,8 +1,5 @@
 *.asv
-test.m/*
 .DS_Store
-py/*
-*.pyc
-test2/*
-py2/*
-py/nodes/And.py
+test.m/*
+test.py/*
+__pycache__/*

@@ -142,8 +142,14 @@ def mparen(fun: Any, *index: Any) -> Any:
     return fun
 
 
-def configure() -> tuple[Literal["test2"], Literal["py2"]]:
-    return "test2", "py2"
+def configure() -> tuple[Literal["test.py/m"], Literal["test.py/py"]]:
+    if not isfolder("test.py"):
+        mkdir("test.py")
+    if not isfolder("test.py/m"):
+        mkdir("test.py/m")
+    if not isfolder("test.py/py"):
+        mkdir("test.py/py")
+    return "test.py/m", "test.py/py"
 
 
 class File:
