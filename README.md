@@ -1,5 +1,5 @@
 # mcst
-MATLAB concrete syntax tree
+MATLAB concrete syntax tree, developed on MATLAB, works on MATLAB and Python.
 
 Current stage:
 + [x] Bootstrap (via transpile to Python)
