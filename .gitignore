@@ -1,5 +1,5 @@
 *.asv
-test/*
+test.m/*
 .DS_Store
 py/*
 *.pyc
