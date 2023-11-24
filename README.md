@@ -1,6 +1,12 @@
 # mcst
 MATLAB concrete syntax tree
 
+Current stage:
++ [v] Bootstrap (via transpile to python)
++ [ ] Fully compatible
++ [ ] Fully tested
++ [ ] Production ready
+
 Known limitations:
 + Ellipses are not supported (working in progress)
   ```MATLAB
