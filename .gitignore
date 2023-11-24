@@ -1,5 +1,5 @@
 *.asv
 .DS_Store
-test_m/*
+test_m/m/*
 test_py/*
-__pycache__/*
+**/__pycache__
