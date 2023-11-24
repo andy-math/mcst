@@ -35,11 +35,11 @@ table = [
     {'newline', newline}
     ];
 [testdir, pydir] = configure();
-if isfolder(pydir+"/nodes")
-    rmdir(pydir+"/nodes", 's');
+if isfolder(pydir + "/nodes")
+    rmdir(pydir + "/nodes", 's');
 end
-mkdir(pydir+"/nodes");
-fid = fopen(pydir+"/main.py", 'wt+');
+mkdir(pydir + "/nodes");
+fid = fopen(pydir + "/main.py", 'wt+');
 files = dir('mcst');
 for i = 1 : numel(files)
     if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
@@ -53,10 +53,10 @@ end
 fprintf(fid, 'from py.output import output\n');
 fprintf(fid, 'from py.m2py import m2py\n');
 fclose(fid);
-if isfile(pydir+"/output.py")
-    delete(pydir+"/output.py");
+if isfile(pydir + "/output.py")
+    delete(pydir + "/output.py");
 end
-fid = fopen(pydir+"/m2py.py", 'wt+');
+fid = fopen(pydir + "/m2py.py", 'wt+');
 fprintf(fid, 'from py.nodes.Segment import Segment\n');
 fprintf(fid, 'from py.nodes.Matrix import Matrix\n');
 fprintf(fid, 'from py.nodes.MatrixLine import MatrixLine\n');

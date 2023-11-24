@@ -53,7 +53,7 @@ function outputSegment(fid, indent, node)
                 end
                 if ~isempty(node.modifier)
                     fprintf(fid, '(');
-                    for i = 1:numel(node.modifier)
+                    for i = 1 : numel(node.modifier)
                         outputExpression(fid, indent, node.modifier(i));
                     end
                     fprintf(fid, ')');
