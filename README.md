@@ -29,6 +29,7 @@ Known limitations:
   ```MATLAB
   obj@ParentCls.fun()
   ```
++ Lack of robust and user-friendly error messages (low priority)
 
 Roadmap: 
 + [ ] Build auto-formatter tool
