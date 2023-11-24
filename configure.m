@@ -1,13 +1,13 @@
 function [mdir, pydir] = configure()
-    if ~isfolder('test.m')
-        mkdir('test.m');
+    if ~isfolder('test_m')
+        mkdir('test_m');
     end
-    if ~isfolder('test.m/m')
-        mkdir('test.m/m');
+    if ~isfolder('test_m/m')
+        mkdir('test_m/m');
     end
-    if ~isfolder('test.m/py')
-        mkdir('test.m/py');
+    if ~isfolder('test_m/py')
+        mkdir('test_m/py');
     end
-    mdir = 'test.m/m';
-    pydir = 'test.m/py';
+    mdir = 'test_m/m';
+    pydir = 'test_m/py';
 end

@@ -46,20 +46,20 @@ for i = 1 : numel(files)
         node = parseFile("mcst/" + files(i).name, table);
         output(testdir + "/" + files(i).name, node);
         m2py(pydir + "/nodes/" + files(i).name(1 : end - 2) + ".py", node);
-        fprintf(fid, 'from py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2));
+        fprintf(fid, 'from test_m.py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2));
         compareFile("mcst/" + files(i).name, testdir + "/" + files(i).name);
     end
 end
-fprintf(fid, 'from py.output import output\n');
-fprintf(fid, 'from py.m2py import m2py\n');
+fprintf(fid, 'from test_m.py.output import output\n');
+fprintf(fid, 'from test_m.py.m2py import m2py\n');
 fclose(fid);
 if isfile(pydir + "/output.py")
     delete(pydir + "/output.py");
 end
 fid = fopen(pydir + "/m2py.py", 'wt+');
-fprintf(fid, 'from py.nodes.Segment import Segment\n');
-fprintf(fid, 'from py.nodes.Matrix import Matrix\n');
-fprintf(fid, 'from py.nodes.MatrixLine import MatrixLine\n');
+fprintf(fid, 'from test_m.py.nodes.Segment import Segment\n');
+fprintf(fid, 'from test_m.py.nodes.Matrix import Matrix\n');
+fprintf(fid, 'from test_m.py.nodes.MatrixLine import MatrixLine\n');
 fclose(fid);
 %
 node = parseFile('main.m', table);

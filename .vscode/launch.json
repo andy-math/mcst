@@ -5,7 +5,7 @@
             "name": "Python: main.py",
             "type": "python",
             "request": "launch",
-            "program": "py/main.py",
+            "program": "test_m/py/main.py",
             "env": {
                 "PYTHONPATH": "${workspaceRoot}"
             },

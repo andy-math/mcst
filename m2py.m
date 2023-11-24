@@ -240,7 +240,7 @@ function env = outputSegment(fid, indent, node, retval, env)
             env = patchAssign(env, node);
         case 'ClassDef'
             if isa(node.head.rvalue, 'LT') && isa(node.head.rvalue.b, 'Identifier')
-                fprintf(fid, 'from py.nodes.');
+                fprintf(fid, 'from test_m.py.nodes.');
                 outputExpression(fid, indent, node.head.rvalue.b, env);
                 fprintf(fid, ' import ');
                 outputExpression(fid, indent, node.head.rvalue.b, env);

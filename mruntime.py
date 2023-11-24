@@ -142,14 +142,14 @@ def mparen(fun: Any, *index: Any) -> Any:
     return fun
 
 
-def configure() -> tuple[Literal["test.py/m"], Literal["test.py/py"]]:
-    if not isfolder("test.py"):
-        mkdir("test.py")
-    if not isfolder("test.py/m"):
-        mkdir("test.py/m")
-    if not isfolder("test.py/py"):
-        mkdir("test.py/py")
-    return "test.py/m", "test.py/py"
+def configure() -> tuple[Literal["test_py/m"], Literal["test_py/py"]]:
+    if not isfolder("test_py"):
+        mkdir("test_py")
+    if not isfolder("test_py/m"):
+        mkdir("test_py/m")
+    if not isfolder("test_py/py"):
+        mkdir("test_py/py")
+    return "test_py/m", "test_py/py"
 
 
 class File:
@@ -166,7 +166,7 @@ def repmat(c: str, a: Literal[1], b: int) -> str:
 
 
 def isa(a: Any, b: str) -> bool:
-    mod = importlib.import_module(f"py.nodes.{b}")
+    mod = importlib.import_module(f"test_m.py.nodes.{b}")
     return isinstance(a, getattr(mod, b))
 
 
