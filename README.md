@@ -26,9 +26,9 @@ Known limitations:
 
 Roadmap: 
 + [ ] Build auto-formatter tool
-+ [ ] Support Ellipses
-+ [ ] Support Command format
-+ [ ] Support Exclamation point
++ [ ] Support ellipses
++ [ ] Support command format
++ [ ] Support exclamation point
 + [ ] More test cases
 + [ ] Imporve performance
 
