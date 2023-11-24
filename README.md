@@ -2,8 +2,8 @@
 MATLAB concrete syntax tree
 
 Current stage:
-+ [v] Bootstrap (via transpile to python)
-+ [ ] Fully compatible
++ [x] Bootstrap (via transpile to Python)
++ [ ] Fully compatible with standard MATLAB
 + [ ] Fully tested
 + [ ] Production ready
 
