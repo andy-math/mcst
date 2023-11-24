@@ -1,4 +1,7 @@
 # mcst
+
+![](https://github.com/andy-math/mcst/actions/workflows/python-package.yml/badge.svg)
+
 MATLAB concrete syntax tree, developed on MATLAB, tested and available on MATLAB and Python.
 
 Current stage:
