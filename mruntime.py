@@ -152,7 +152,7 @@ class File:
 
 
 def dir(path: str) -> list[File]:
-    return [File(x) for x in os.listdir(path)]
+    return [File(x) for x in sorted(os.listdir(path))]
 
 
 def repmat(c: str, a: Literal[1], b: int) -> str:
