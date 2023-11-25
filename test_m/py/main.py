@@ -156,6 +156,23 @@ def nextToken(s, j, table, lastToken): # retval: [j, type, token]
         return [j, type, token]
     error('unknown token')
     return [j, type, token]
+def field(tokens, i): # retval: [i, node]
+    nargin = 2
+    nargout = 2
+    if False and mparen(tokens, i).type:
+        pass
+    elif (mparen(tokens, i).type) == 'identifier':
+        node = Identifier(mparen(tokens, i).token)
+        i = i + 1
+    elif (mparen(tokens, i).type) == 'lparen':
+        i = i + 1
+        [i, node] = expression(tokens, i)
+        if not strcmp(mparen(tokens, i).type, 'rparen'):
+            error('unexpected token')
+        i = i + 1
+    else:
+        error('unexpected token')
+    return [i, node]
 def reference(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
@@ -170,20 +187,8 @@ def reference(tokens, i): # retval: [i, node]
             pass
         elif (mparen(tokens, i).type) == 'field':
             i = i + 1
-            if False and mparen(tokens, i).type:
-                pass
-            elif (mparen(tokens, i).type) == 'identifier':
-                node = Field(node, Identifier(mparen(tokens, i).token))
-                i = i + 1
-            elif (mparen(tokens, i).type) == 'lparen':
-                i = i + 1
-                [i, expr] = expression(tokens, i)
-                if not strcmp(mparen(tokens, i).type, 'rparen'):
-                    error('unexpected token')
-                i = i + 1
-                node = Field(node, expr)
-            else:
-                error('unexpected token')
+            [i, node2] = field(tokens, i)
+            node = Field(node, node2)
         elif (mparen(tokens, i).type) == 'lparen':
             i = i + 1
             args = List()

@@ -197,6 +197,22 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
     end
     error('unknown token');
 end
+function [i, node] = field(tokens, i)
+    switch tokens(i).type
+        case 'identifier'
+            node = Identifier(tokens(i).token);
+            i = i + 1;
+        case 'lparen'
+            i = i + 1;
+            [i, node] = expression(tokens, i);
+            if ~strcmp(tokens(i).type, 'rparen')
+                error('unexpected token');
+            end
+            i = i + 1;
+        otherwise
+            error('unexpected token');
+    end
+end
 function [i, node] = reference(tokens, i)
     if i <= 0 || i > numel(tokens)
         error('index out of range');
@@ -210,21 +226,8 @@ function [i, node] = reference(tokens, i)
         switch tokens(i).type
             case 'field'
                 i = i + 1;
-                switch tokens(i).type
-                    case 'identifier'
-                        node = Field(node, Identifier(tokens(i).token));
-                        i = i + 1;
-                    case 'lparen'
-                        i = i + 1;
-                        [i, expr] = expression(tokens, i);
-                        if ~strcmp(tokens(i).type, 'rparen')
-                            error('unexpected token');
-                        end
-                        i = i + 1;
-                        node = Field(node, expr);
-                    otherwise
-                        error('unexpected token');
-                end
+                [i, node2] = field(tokens, i);
+                node = Field(node, node2);
             case 'lparen'
                 i = i + 1;
                 args = List();
