@@ -198,37 +198,42 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
     error('unknown token');
 end
 function [i, node] = field(tokens, i)
-    switch tokens(i).type
+    switch tokens.get().type
         case 'identifier'
-            node = Identifier(tokens(i).token);
+            node = Identifier(tokens.get().token);
             i = i + 1;
+            tokens.next();
         case 'lparen'
             i = i + 1;
+            tokens.next();
             [i, node] = expression(tokens, i);
-            if ~strcmp(tokens(i).type, 'rparen')
+            if ~strcmp(tokens.get().type, 'rparen')
                 error('unexpected token');
             end
             i = i + 1;
+            tokens.next();
         otherwise
             error('unexpected token');
     end
 end
 function [i, node] = colonOrExpression(tokens, i)
-    if strcmp(tokens(i).type, 'colon')
+    if strcmp(tokens.get().type, 'colon')
         node = Colon(Expression.empty(), Expression.empty(), Expression.empty());
         i = i + 1;
+        tokens.next();
     else
         [i, node] = expression(tokens, i);
     end
 end
 function [i, args] = subscript(tokens, i, endToken)
     args = List();
-    while ~strcmp(tokens(i).type, endToken)
+    while ~strcmp(tokens.get().type, endToken)
         [i, arg] = colonOrExpression(tokens, i);
         args.append(arg);
-        if strcmp(tokens(i).type, 'comma')
+        if strcmp(tokens.get().type, 'comma')
             i = i + 1;
-        elseif ~strcmp(tokens(i).type, endToken)
+            tokens.next();
+        elseif ~strcmp(tokens.get().type, endToken)
             error('unexpected token');
         end
     end
@@ -238,26 +243,32 @@ function [i, node] = reference(tokens, i)
     if i <= 0 || i > numel(tokens)
         error('index out of range');
     end
-    if ~strcmp(tokens(i).type, 'identifier')
+    if ~strcmp(tokens.get().type, 'identifier')
         error('must be identifier');
     end
-    node = Identifier(tokens(i).token);
+    node = Identifier(tokens.get().token);
     i = i + 1;
+    tokens.next();
     while i <= numel(tokens)
-        switch tokens(i).type
+        switch tokens.get().type
             case 'field'
                 i = i + 1;
+                tokens.next();
                 [i, node2] = field(tokens, i);
                 node = Field(node, node2);
             case 'lparen'
                 i = i + 1;
+                tokens.next();
                 [i, args] = subscript(tokens, i, 'rparen');
                 i = i + 1;
+                tokens.next();
                 node = PIndex(node, args);
             case 'lbrace'
                 i = i + 1;
+                tokens.next();
                 [i, args] = subscript(tokens, i, 'rbrace');
                 i = i + 1;
+                tokens.next();
                 node = BIndex(node, args);
             otherwise
                 break
@@ -266,19 +277,22 @@ function [i, node] = reference(tokens, i)
 end
 function [i, node] = matrixLine(tokens, i)
     args = List();
-    if strcmp(tokens(i).type, 'comma')
+    if strcmp(tokens.get().type, 'comma')
         i = i + 1;
+        tokens.next();
     end
-    while ~ismember(tokens(i).type, {'rsquare', 'rbrace', 'newline', 'semi'})
-        if strcmp(tokens(i).type, 'not') && ismember(tokens(i + 1).type, {'rsquare', 'rbrace', 'newline', 'semi', 'comma'})
+    while ~ismember(tokens.get().type, {'rsquare', 'rbrace', 'newline', 'semi'})
+        if strcmp(tokens.get().type, 'not') && ismember(tokens(i + 1).type, {'rsquare', 'rbrace', 'newline', 'semi', 'comma'})
             arg = Dismiss();
             i = i + 1;
+            tokens.next();
         else
             [i, arg] = expression(tokens, i);
         end
         args.append(arg);
-        if strcmp(tokens(i).type, 'comma')
+        if strcmp(tokens.get().type, 'comma')
             i = i + 1;
+            tokens.next();
         end
     end
     args = args.toList(Expression.empty());
@@ -289,44 +303,53 @@ function [i, node] = matrixLine(tokens, i)
     end
 end
 function [i, node] = matrixLiteral(tokens, i, left, right, class_)
-    if ~strcmp(tokens(i).type, left)
+    if ~strcmp(tokens.get().type, left)
         error(['must be ', left]);
     end
     i = i + 1;
+    tokens.next();
     args = List();
-    while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
+    while strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline')
         i = i + 1;
+        tokens.next();
     end
-    while ~strcmp(tokens(i).type, right)
+    while ~strcmp(tokens.get().type, right)
         [i, arg] = matrixLine(tokens, i);
         args.append(arg);
-        while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
+        while strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline')
             i = i + 1;
+            tokens.next();
         end
     end
     i = i + 1;
+    tokens.next();
     node = class_(args.toList(MatrixLine.empty()));
 end
 function [i, node] = lambda_(tokens, i)
-    if ~strcmp(tokens(i).type, 'lambda')
+    if ~strcmp(tokens.get().type, 'lambda')
         error('unexpected token');
     end
     i = i + 1;
-    if strcmp(tokens(i).type, 'lparen')
+    tokens.next();
+    if strcmp(tokens.get().type, 'lparen')
         i = i + 1;
+        tokens.next();
         args = List();
-        while ~strcmp(tokens(i).type, 'rparen')
-            if ~strcmp(tokens(i).type, 'identifier')
+        while ~strcmp(tokens.get().type, 'rparen')
+            if ~strcmp(tokens.get().type, 'identifier')
                 error('unexpected token');
             end
-            arg = Identifier(tokens(i).token);
+            arg = Identifier(tokens.get().token);
             args.append(arg);
             i = i + 1;
-            if strcmp(tokens(i).type, 'comma')
+            tokens.next();
+            if strcmp(tokens.get().type, 'comma')
                 i = i + 1;
+                tokens.next();
             end
         end
         i = i + 1;
+        tokens.next();
         args = args.toList(Identifier.empty());
     else
         args = Identifier.empty();
@@ -335,19 +358,22 @@ function [i, node] = lambda_(tokens, i)
     node = Lambda(args, node);
 end
 function [i, node] = operand(tokens, i)
-    switch tokens(i).type
+    switch tokens.get().type
         case {'chars', 'string', 'number'}
-            node = Literal(tokens(i).token);
+            node = Literal(tokens.get().token);
             i = i + 1;
+            tokens.next();
         case 'lambda'
             [i, node] = lambda_(tokens, i);
         case 'lparen'
             i = i + 1;
+            tokens.next();
             [i, node] = expression(tokens, i);
-            if ~strcmp(tokens(i).type, 'rparen')
+            if ~strcmp(tokens.get().type, 'rparen')
                 error('must be rparen');
             end
             i = i + 1;
+            tokens.next();
             node = Paren(node);
         case 'lsquare'
             [i, node] = matrixLiteral(tokens, i, 'lsquare', 'rsquare', @Matrix);
@@ -356,11 +382,12 @@ function [i, node] = operand(tokens, i)
         case 'identifier'
             [i, node] = reference(tokens, i);
         case 'keyword'
-            if ~strcmp(tokens(i).token, 'end')
+            if ~strcmp(tokens.get().token, 'end')
                 error('must be end');
             end
             node = Identifier('end');
             i = i + 1;
+            tokens.next();
         otherwise
             error('unexpected token');
     end
@@ -368,9 +395,10 @@ end
 function [i, node] = transPower(tokens, i)
     [i, node] = operand(tokens, i);
     while i <= numel(tokens)
-        switch tokens(i).type
+        switch tokens.get().type
             case 'transpose'
                 i = i + 1;
+                tokens.next();
                 node = Transpose(node);
             otherwise
                 break
@@ -378,16 +406,19 @@ function [i, node] = transPower(tokens, i)
     end
 end
 function [i, node] = unary(tokens, i)
-    switch tokens(i).type
+    switch tokens.get().type
         case 'plus'
             i = i + 1;
+            tokens.next();
             [i, node] = unary(tokens, i);
         case 'minus'
             i = i + 1;
+            tokens.next();
             [i, node] = unary(tokens, i);
             node = Negative(node);
         case 'not'
             i = i + 1;
+            tokens.next();
             [i, node] = unary(tokens, i);
             node = Not(node);
         otherwise
@@ -410,9 +441,10 @@ function [i, node] = mulDiv(tokens, i)
 end
 function [i, node] = lookAhead(tokens, i, next, map)
     [i, node] = next(tokens, i);
-    while i <= numel(tokens) && isKey(map, tokens(i).type)
-        fun = map(tokens(i).type);
+    while i <= numel(tokens) && isKey(map, tokens.get().type)
+        fun = map(tokens.get().type);
         i = i + 1;
+        tokens.next();
         [i, node] = fun(tokens, i, node);
     end
 end
@@ -424,11 +456,13 @@ function [i, node] = addSub(tokens, i)
 end
 function [i, node] = colonOperator(tokens, i)
     [i, node] = addSub(tokens, i);
-    if i <= numel(tokens) && strcmp(tokens(i).type, 'colon')
+    if i <= numel(tokens) && strcmp(tokens.get().type, 'colon')
         i = i + 1;
+        tokens.next();
         [i, node2] = addSub(tokens, i);
-        if i <= numel(tokens) && strcmp(tokens(i).type, 'colon')
+        if i <= numel(tokens) && strcmp(tokens.get().type, 'colon')
             i = i + 1;
+            tokens.next();
             [i, node3] = addSub(tokens, i);
             node = Colon(node, node2, node3);
         else
@@ -460,108 +494,124 @@ function [i, node] = expression(tokens, i)
     [i, node] = logicalOr(tokens, i);
 end
 function [i, node] = modifier(tokens, i)
-    if ~strcmp(tokens(i).type, 'identifier')
+    if ~strcmp(tokens.get().type, 'identifier')
         error('unexpected token');
     end
-    rvalue = Identifier(tokens(i).token);
+    rvalue = Identifier(tokens.get().token);
     i = i + 1;
-    if strcmp(tokens(i).type, 'assign')
+    tokens.next();
+    if strcmp(tokens.get().type, 'assign')
         i = i + 1;
+        tokens.next();
         lvalue = rvalue;
-        rvalue = Identifier(tokens(i).token);
+        rvalue = Identifier(tokens.get().token);
         i = i + 1;
+        tokens.next();
     else
         lvalue = Identifier.empty();
     end
     node = Modifier(lvalue, rvalue);
 end
 function [i, node] = statement(tokens, i)
-    switch tokens(i).type
+    switch tokens.get().type
         case {'newline', 'semi'}
             error('unexpected token');
         case 'keyword'
-            keyword = tokens(i).token;
+            keyword = tokens.get().token;
             i = i + 1;
+            tokens.next();
         otherwise
             keyword = '';
     end
-    if ismember(keyword, {'properties', 'classdef', 'methods'}) && strcmp(tokens(i).type, 'lparen')
+    if ismember(keyword, {'properties', 'classdef', 'methods'}) && strcmp(tokens.get().type, 'lparen')
         i = i + 1;
+        tokens.next();
         modifiers = List();
-        while ~strcmp(tokens(i).type, 'rparen')
+        while ~strcmp(tokens.get().type, 'rparen')
             [i, mod] = modifier(tokens, i);
             modifiers.append(mod);
-            if strcmp(tokens(i).type, 'comma')
+            if strcmp(tokens.get().type, 'comma')
                 i = i + 1;
+                tokens.next();
             end
         end
         i = i + 1;
+        tokens.next();
         modifiers = modifiers.toList(Modifier.empty());
     else
         modifiers = Modifier.empty();
     end
-    if i <= numel(tokens) && ~(strcmp(tokens(i).type, 'comment') || strcmp(tokens(i).type, 'newline'))
+    if i <= numel(tokens) && ~(strcmp(tokens.get().type, 'comment') || strcmp(tokens.get().type, 'newline'))
         [i, rvalue] = expression(tokens, i);
-        if i <= numel(tokens) && strcmp(tokens(i).type, 'assign')
+        if i <= numel(tokens) && strcmp(tokens.get().type, 'assign')
             i = i + 1;
+            tokens.next();
             lvalue = rvalue;
             [i, rvalue] = expression(tokens, i);
         else
             lvalue = Expression.empty();
         end
-        if i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'comma'))
+        if i <= numel(tokens) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'comma'))
             i = i + 1;
+            tokens.next();
         end
     else
         lvalue = Expression.empty();
         rvalue = Expression.empty();
     end
-    if i <= numel(tokens) && strcmp(tokens(i).type, 'comment')
-        comment = tokens(i).token;
+    if i <= numel(tokens) && strcmp(tokens.get().type, 'comment')
+        comment = tokens.get().token;
         i = i + 1;
+        tokens.next();
     else
         comment = [];
     end
     node = Statement(keyword, modifiers, lvalue, rvalue, comment);
-    while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'comma') || strcmp(tokens(i).type, 'newline'))
+    while i <= numel(tokens) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'comma') || strcmp(tokens.get().type, 'newline'))
         i = i + 1;
+        tokens.next();
     end
 end
 function [i, node] = variableDeclare(tokens, i)
     % name type = default
-    if ~strcmp(tokens(i).type, 'identifier')
+    if ~strcmp(tokens.get().type, 'identifier')
         error('unexpected token');
     end
-    name = tokens(i).token;
+    name = tokens.get().token;
     i = i + 1;
-    if strcmp(tokens(i).type, 'identifier')
-        type = tokens(i).token;
+    tokens.next();
+    if strcmp(tokens.get().type, 'identifier')
+        type = tokens.get().token;
         i = i + 1;
+        tokens.next();
     else
         type = '';
     end
-    if strcmp(tokens(i).type, 'assign')
+    if strcmp(tokens.get().type, 'assign')
         i = i + 1;
+        tokens.next();
         [i, expr] = expression(tokens, i);
     else
         expr = Expression.empty();
     end
-    if i <= numel(tokens) && strcmp(tokens(i).type, 'comment')
-        comment = tokens(i).token;
+    if i <= numel(tokens) && strcmp(tokens.get().type, 'comment')
+        comment = tokens.get().token;
         i = i + 1;
+        tokens.next();
     else
         comment = [];
     end
     node = Variable(name, type, expr, comment);
-    while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline'))
+    while i <= numel(tokens) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline'))
         i = i + 1;
+        tokens.next();
     end
 end
 function blocks = program(tokens)
     blocks = List();
     i = 1;
     while i <= numel(tokens)
-        while strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline')
+        while strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline')
             i = i + 1;
         end
         [i, blk] = block(tokens, i);
@@ -570,12 +620,12 @@ function blocks = program(tokens)
     blocks = blocks.toList(Segment.empty());
 end
 function [i, node] = controlBlock(tokens, i, token, class_)
-    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, token))
+    if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, token))
         error(['expect ', token]);
     end
     [i, head] = statement(tokens, i);
     args = List();
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+    while ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
         [i, arg] = block(tokens, i);
         args.append(arg);
     end
@@ -583,14 +633,14 @@ function [i, node] = controlBlock(tokens, i, token, class_)
     node = class_(head, args.toList(Segment.empty()), end_);
 end
 function [i, node] = ifBlock(tokens, i)
-    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'if'))
+    if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'if'))
         error('expect if');
     end
     branch = List();
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+    while ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
         [i, head] = statement(tokens, i);
         args = List();
-        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).token, {'end', 'else', 'elseif'}))
+        while ~(strcmp(tokens.get().type, 'keyword') && ismember(tokens.get().token, {'end', 'else', 'elseif'}))
             [i, arg] = block(tokens, i);
             args.append(arg);
         end
@@ -600,15 +650,15 @@ function [i, node] = ifBlock(tokens, i)
     node = If(branch.toList(IfBranch.empty()), end_);
 end
 function [i, node] = switchBlock(tokens, i)
-    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'switch'))
+    if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'switch'))
         error('expect switch');
     end
     [i, expr] = statement(tokens, i);
     branch = List();
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+    while ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
         [i, head] = statement(tokens, i);
         args = List();
-        while ~(strcmp(tokens(i).type, 'keyword') && ismember(tokens(i).token, {'end', 'case', 'otherwise'}))
+        while ~(strcmp(tokens.get().type, 'keyword') && ismember(tokens.get().token, {'end', 'case', 'otherwise'}))
             [i, arg] = block(tokens, i);
             args.append(arg);
         end
@@ -618,12 +668,12 @@ function [i, node] = switchBlock(tokens, i)
     node = Switch(expr, branch.toList(SwitchCase.empty()), end_);
 end
 function [i, node] = propertiesBlock(tokens, i)
-    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'properties'))
+    if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'properties'))
         error('expect properties');
     end
     [i, head] = statement(tokens, i);
     props = List();
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
+    while ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
         [i, prop] = variableDeclare(tokens, i);
         props.append(prop);
     end
@@ -631,13 +681,13 @@ function [i, node] = propertiesBlock(tokens, i)
     node = Properties(head, props.toList(Statement.empty()), end_);
 end
 function [i, node] = methodsBlock(tokens, i)
-    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'methods'))
+    if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'methods'))
         error('expect methods');
     end
     [i, head] = statement(tokens, i);
     meth = List();
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'function'))
+    while ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+        if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'function'))
             error('unexpected token');
         end
         [i, fun] = block(tokens, i);
@@ -647,17 +697,17 @@ function [i, node] = methodsBlock(tokens, i)
     node = Methods(head, meth.toList(Function.empty()), end_);
 end
 function [i, node] = classBlock(tokens, i)
-    if ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'classdef'))
+    if ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'classdef'))
         error('expect classdef');
     end
     [i, head] = statement(tokens, i);
     property = List();
     method = List();
-    while ~(strcmp(tokens(i).type, 'keyword') && strcmp(tokens(i).token, 'end'))
-        if ~strcmp(tokens(i).type, 'keyword')
+    while ~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+        if ~strcmp(tokens.get().type, 'keyword')
             error('unexpected token');
         end
-        switch tokens(i).token
+        switch tokens.get().token
             case 'properties'
                 [i, prop] = propertiesBlock(tokens, i);
                 property.append(prop);
@@ -674,11 +724,11 @@ function [i, node] = classBlock(tokens, i)
     node = ClassDef(head, property, method, end_);
 end
 function [i, node] = block(tokens, i)
-    if ~strcmp(tokens(i).type, 'keyword')
+    if ~strcmp(tokens.get().type, 'keyword')
         [i, node] = statement(tokens, i);
         return
     end
-    switch tokens(i).token
+    switch tokens.get().token
         case {'return', 'continue', 'break'}
             [i, node] = statement(tokens, i);
         case 'for'
@@ -696,7 +746,7 @@ function [i, node] = block(tokens, i)
         otherwise
             error('unexpected keyword');
     end
-    while i <= numel(tokens) && (strcmp(tokens(i).type, 'semi') || strcmp(tokens(i).type, 'newline') || strcmp(tokens(i).type, 'comma'))
+    while i <= numel(tokens) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline') || strcmp(tokens.get().type, 'comma'))
         i = i + 1;
     end
 end

@@ -1,25 +1,28 @@
-classdef TokenList
+classdef TokenList < handle
     properties
         tokens
+        i = 1;
     end
     
     methods
         function self = TokenList(tokens)
             self.tokens = tokens;
         end
-        function subs = subsref(self, subs, varargin)
-            if strcmp(subs(1).type, '()')
-                assert(numel(subs(1).subs) == 1 && numel(subs(1).subs{1}) == 1);
-                subs = builtin('subsref', self.tokens, subs);
-            else
-                subs = builtin('subsref', self, subs);
-            end
-        end
         function n = numel(self, varargin)
             if ~isempty(varargin)
                 n = 1;
             else
                 n = numel(self.tokens);
+            end
+        end
+        function next(self)
+            self.i = self.i + 1;
+        end
+        function v = get(self)
+            if self.i > numel(self.tokens)
+                v = [];
+            else
+                v = self.tokens(self.i);
             end
         end
     end

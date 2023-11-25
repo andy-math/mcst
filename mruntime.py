@@ -227,12 +227,23 @@ def isequal(a: Any, b: Any) -> bool:
 class TokenList:
     def __init__(self, tokens: list[str]) -> None:
         self.tokens = tokens
+        self.i = 0
 
     def __getitem__(self, i: int) -> str:
+        self.i = i
         return self.tokens[i]
 
     def __len__(self) -> int:
         return len(self.tokens)
+
+    def next(self) -> None:
+        self.i += 1
+
+    def get(self) -> Union[list[str], str]:
+        if self.i >= len(self.tokens):
+            return []
+        else:
+            return self.tokens[self.i]
 
 
 newline = "\n"
