@@ -368,16 +368,18 @@ def mulDiv(tokens, i): # retval: [i, node]
     map = put(map, 'mtimes', lambda tokens, i, node: wrap(lambda *args: MTimes(*args), lambda *args: unary(*args), tokens, i, node))
     map = put(map, 'mldivide', lambda tokens, i, node: wrap(lambda *args: MLDivide(*args), lambda *args: unary(*args), tokens, i, node))
     map = put(map, 'mrdivide', lambda tokens, i, node: wrap(lambda *args: MRDivide(*args), lambda *args: unary(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: unary(*args), map)
+    [i, node] = lookAhead(tokens, i, lambda *args: unary(*args), map, inf)
     return [i, node]
-def lookAhead(tokens, i, next, map): # retval: [i, node]
-    nargin = 4
+def lookAhead(tokens, i, next, map, repeat): # retval: [i, node]
+    nargin = 5
     nargout = 2
     [i, node] = mparen(next, tokens, i)
-    while i <= numel(tokens) and isKey(map, mparen(tokens, i).type):
+    count = 0
+    while i <= numel(tokens) and isKey(map, mparen(tokens, i).type) and count < repeat:
         fun = mparen(map, mparen(tokens, i).type)
         i = i + 1
         [i, node] = mparen(fun, tokens, i, node)
+        count = count + 1
     return [i, node]
 def addSub(tokens, i): # retval: [i, node]
     nargin = 2
@@ -385,7 +387,7 @@ def addSub(tokens, i): # retval: [i, node]
     map = dict()
     map = put(map, 'plus', lambda tokens, i, node: wrap(lambda *args: Plus(*args), lambda *args: mulDiv(*args), tokens, i, node))
     map = put(map, 'minus', lambda tokens, i, node: wrap(lambda *args: Minus(*args), lambda *args: mulDiv(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: mulDiv(*args), map)
+    [i, node] = lookAhead(tokens, i, lambda *args: mulDiv(*args), map, inf)
     return [i, node]
 def colonOperator(tokens, i): # retval: [i, node]
     nargin = 2
@@ -411,21 +413,21 @@ def compare(tokens, i): # retval: [i, node]
     map = put(map, 'gt', lambda tokens, i, node: wrap(lambda *args: GT(*args), lambda *args: colonOperator(*args), tokens, i, node))
     map = put(map, 'eq', lambda tokens, i, node: wrap(lambda *args: EQ(*args), lambda *args: colonOperator(*args), tokens, i, node))
     map = put(map, 'ne', lambda tokens, i, node: wrap(lambda *args: NE(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: colonOperator(*args), map)
+    [i, node] = lookAhead(tokens, i, lambda *args: colonOperator(*args), map, inf)
     return [i, node]
 def logicalAnd(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
     map = dict()
     map = put(map, 'and', lambda tokens, i, node: wrap(lambda *args: And(*args), lambda *args: compare(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: compare(*args), map)
+    [i, node] = lookAhead(tokens, i, lambda *args: compare(*args), map, inf)
     return [i, node]
 def logicalOr(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
     map = dict()
     map = put(map, 'or', lambda tokens, i, node: wrap(lambda *args: Or(*args), lambda *args: logicalAnd(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: logicalAnd(*args), map)
+    [i, node] = lookAhead(tokens, i, lambda *args: logicalAnd(*args), map, inf)
     return [i, node]
 def expression(tokens, i): # retval: [i, node]
     nargin = 2
