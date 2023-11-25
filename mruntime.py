@@ -224,10 +224,6 @@ def isequal(a: Any, b: Any) -> bool:
     return True
 
 
-def deal(*args: Any) -> tuple[Any]:
-    return args
-
-
 newline = "\n"
 numel = len
 true = True
