@@ -455,30 +455,14 @@ function [i, node] = compare(tokens, i)
     [i, node] = lookAhead(tokens, i, @colonOperator, map);
 end
 function [i, node] = logicalAnd(tokens, i)
-    [i, node] = compare(tokens, i);
-    while i <= numel(tokens)
-        switch tokens(i).type
-            case 'and'
-                i = i + 1;
-                [i, node2] = compare(tokens, i);
-                node = And(node, node2);
-            otherwise
-                break
-        end
-    end
+    map = dict();
+    map = put(map, 'and', @(tokens, i, node)wrap(@And, @compare, tokens, i, node));
+    [i, node] = lookAhead(tokens, i, @compare, map);
 end
 function [i, node] = logicalOr(tokens, i)
-    [i, node] = logicalAnd(tokens, i);
-    while i <= numel(tokens)
-        switch tokens(i).type
-            case 'or'
-                i = i + 1;
-                [i, node2] = compare(tokens, i);
-                node = Or(node, node2);
-            otherwise
-                break
-        end
-    end
+    map = dict();
+    map = put(map, 'or', @(tokens, i, node)wrap(@Or, @logicalAnd, tokens, i, node));
+    [i, node] = lookAhead(tokens, i, @logicalAnd, map);
 end
 function [i, node] = expression(tokens, i)
     [i, node] = logicalOr(tokens, i);

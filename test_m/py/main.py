@@ -416,30 +416,16 @@ def compare(tokens, i): # retval: [i, node]
 def logicalAnd(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
-    [i, node] = compare(tokens, i)
-    while i <= numel(tokens):
-        if False and mparen(tokens, i).type:
-            pass
-        elif (mparen(tokens, i).type) == 'and':
-            i = i + 1
-            [i, node2] = compare(tokens, i)
-            node = And(node, node2)
-        else:
-            break
+    map = dict()
+    map = put(map, 'and', lambda tokens, i, node: wrap(lambda *args: And(*args), lambda *args: compare(*args), tokens, i, node))
+    [i, node] = lookAhead(tokens, i, lambda *args: compare(*args), map)
     return [i, node]
 def logicalOr(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
-    [i, node] = logicalAnd(tokens, i)
-    while i <= numel(tokens):
-        if False and mparen(tokens, i).type:
-            pass
-        elif (mparen(tokens, i).type) == 'or':
-            i = i + 1
-            [i, node2] = compare(tokens, i)
-            node = Or(node, node2)
-        else:
-            break
+    map = dict()
+    map = put(map, 'or', lambda tokens, i, node: wrap(lambda *args: Or(*args), lambda *args: logicalAnd(*args), tokens, i, node))
+    [i, node] = lookAhead(tokens, i, lambda *args: logicalAnd(*args), map)
     return [i, node]
 def expression(tokens, i): # retval: [i, node]
     nargin = 2
