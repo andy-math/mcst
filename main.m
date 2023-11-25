@@ -402,7 +402,12 @@ function [i, node] = unary(tokens, i)
             [i, node] = transPower(tokens, i);
     end
 end
+function [i, node] = wrap(fun1, fun2, tokens, i, node)
+    [i, node2] = fun2(tokens, i);
+    node = fun1(node, node2);
+end
 function [i, node] = mulDiv(tokens, i)
+    [~, node3] = mulDiv2(tokens, i);
     [i, node] = unary(tokens, i);
     while i <= numel(tokens)
         switch tokens(i).type
@@ -433,6 +438,25 @@ function [i, node] = mulDiv(tokens, i)
             otherwise
                 break
         end
+    end
+    assert(isequal(node, node3));
+end
+function [i, node] = mulDiv2(tokens, i)
+    map = dict();
+    map = put(map, 'times', @(tokens, i, node)wrap(@Times, @unary, tokens, i, node));
+    map = put(map, 'ldivide', @(tokens, i, node)wrap(@LDivide, @unary, tokens, i, node));
+    map = put(map, 'rdivide', @(tokens, i, node)wrap(@RDivide, @unary, tokens, i, node));
+    map = put(map, 'mtimes', @(tokens, i, node)wrap(@MTimes, @unary, tokens, i, node));
+    map = put(map, 'mldivide', @(tokens, i, node)wrap(@MLDivide, @unary, tokens, i, node));
+    map = put(map, 'mrdivide', @(tokens, i, node)wrap(@MRDivide, @unary, tokens, i, node));
+    [i, node] = lookAhead(tokens, i, @unary, map);
+end
+function [i, node] = lookAhead(tokens, i, next, map)
+    [i, node] = next(tokens, i);
+    while i <= numel(tokens) && isKey(map, tokens(i).type)
+        fun = map(tokens(i).type);
+        i = i + 1;
+        [i, node] = fun(tokens, i, node);
     end
 end
 function [i, node] = addSub(tokens, i)

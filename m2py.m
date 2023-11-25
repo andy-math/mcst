@@ -119,7 +119,7 @@ function b = endLambda(node)
             b = endLambda(node.a) || endLambda(node.b);
         case 'Not'
             b = endLambda(node.value);
-        case 'PIndex'
+        case {'PIndex', 'Field'}
             b = false;
         case 'Matrix'
             b = endLambda(node.line);

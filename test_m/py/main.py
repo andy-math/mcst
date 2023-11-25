@@ -352,9 +352,16 @@ def unary(tokens, i): # retval: [i, node]
     else:
         [i, node] = transPower(tokens, i)
     return [i, node]
+def wrap(fun1, fun2, tokens, i, node): # retval: [i, node]
+    nargin = 5
+    nargout = 2
+    [i, node2] = mparen(fun2, tokens, i)
+    node = mparen(fun1, node, node2)
+    return [i, node]
 def mulDiv(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
+    [_, node3] = mulDiv2(tokens, i)
     [i, node] = unary(tokens, i)
     while i <= numel(tokens):
         if False and mparen(tokens, i).type:
@@ -385,6 +392,28 @@ def mulDiv(tokens, i): # retval: [i, node]
             node = MRDivide(node, node2)
         else:
             break
+    assert(isequal(node, node3))
+    return [i, node]
+def mulDiv2(tokens, i): # retval: [i, node]
+    nargin = 2
+    nargout = 2
+    map = dict()
+    map = put(map, 'times', lambda tokens, i, node: wrap(lambda *args: Times(*args), lambda *args: unary(*args), tokens, i, node))
+    map = put(map, 'ldivide', lambda tokens, i, node: wrap(lambda *args: LDivide(*args), lambda *args: unary(*args), tokens, i, node))
+    map = put(map, 'rdivide', lambda tokens, i, node: wrap(lambda *args: RDivide(*args), lambda *args: unary(*args), tokens, i, node))
+    map = put(map, 'mtimes', lambda tokens, i, node: wrap(lambda *args: MTimes(*args), lambda *args: unary(*args), tokens, i, node))
+    map = put(map, 'mldivide', lambda tokens, i, node: wrap(lambda *args: MLDivide(*args), lambda *args: unary(*args), tokens, i, node))
+    map = put(map, 'mrdivide', lambda tokens, i, node: wrap(lambda *args: MRDivide(*args), lambda *args: unary(*args), tokens, i, node))
+    [i, node] = lookAhead(tokens, i, lambda *args: unary(*args), map)
+    return [i, node]
+def lookAhead(tokens, i, next, map): # retval: [i, node]
+    nargin = 4
+    nargout = 2
+    [i, node] = mparen(next, tokens, i)
+    while i <= numel(tokens) and isKey(map, mparen(tokens, i).type):
+        fun = mparen(map, mparen(tokens, i).type)
+        i = i + 1
+        [i, node] = mparen(fun, tokens, i, node)
     return [i, node]
 def addSub(tokens, i): # retval: [i, node]
     nargin = 2

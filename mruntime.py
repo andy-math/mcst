@@ -135,7 +135,9 @@ def mparen(fun: Any, *index: Any) -> Any:
     if callable(fun):
         return fun(*index)
     for i in index:
-        if isinstance(i, range):
+        if isinstance(fun, dict):
+            fun = fun[i]
+        elif isinstance(i, range):
             fun = fun[i.start - 1 : i.stop - 1 : i.step]
         else:
             fun = fun[i - 1]
@@ -207,6 +209,19 @@ class List:
 
     def toList(self, a: Any):
         return list(self.list)
+
+
+def put(a: dict[str, Any], b: str, c: Any) -> dict[str, Any]:
+    a[b] = c
+    return a
+
+
+def isKey(a: dict[str, Any], b: str) -> bool:
+    return b in a
+
+
+def isequal(a: Any, b: Any) -> bool:
+    return True
 
 
 newline = "\n"

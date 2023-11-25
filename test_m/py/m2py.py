@@ -121,7 +121,7 @@ def endLambda(node): # retval: b
         b = endLambda(node.a) or endLambda(node.b)
     elif (type(node).__name__) == 'Not':
         b = endLambda(node.value)
-    elif (type(node).__name__) == 'PIndex':
+    elif (type(node).__name__) in ['PIndex', 'Field']:
         b = false
     elif (type(node).__name__) == 'Matrix':
         b = endLambda(node.line)
