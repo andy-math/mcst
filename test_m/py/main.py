@@ -182,6 +182,19 @@ def colonOrExpression(tokens, i): # retval: [i, node]
     else:
         [i, node] = expression(tokens, i)
     return [i, node]
+def subscript(tokens, i, endToken): # retval: [i, args]
+    nargin = 3
+    nargout = 2
+    args = List()
+    while not strcmp(mparen(tokens, i).type, endToken):
+        [i, arg] = colonOrExpression(tokens, i)
+        mparen(args.append, arg)
+        if strcmp(mparen(tokens, i).type, 'comma'):
+            i = i + 1
+        elif not strcmp(mparen(tokens, i).type, endToken):
+            error('unexpected token')
+    args = mparen(args.toList, mparen(Expression.empty))
+    return [i, args]
 def reference(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
@@ -200,20 +213,9 @@ def reference(tokens, i): # retval: [i, node]
             node = Field(node, node2)
         elif (mparen(tokens, i).type) == 'lparen':
             i = i + 1
-            args = List()
-            while not strcmp(mparen(tokens, i).type, 'rparen'):
-                [i, arg] = colonOrExpression(tokens, i)
-                mparen(args.append, arg)
-                if False and mparen(tokens, i).type:
-                    pass
-                elif (mparen(tokens, i).type) == 'rparen':
-                    pass
-                elif (mparen(tokens, i).type) == 'comma':
-                    i = i + 1
-                else:
-                    error('unexpected token')
+            [i, args] = subscript(tokens, i, 'rparen')
             i = i + 1
-            node = PIndex(node, mparen(args.toList, mparen(Expression.empty)))
+            node = PIndex(node, args)
         elif (mparen(tokens, i).type) == 'lbrace':
             i = i + 1
             args = List()

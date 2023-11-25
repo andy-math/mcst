@@ -221,6 +221,19 @@ function [i, node] = colonOrExpression(tokens, i)
         [i, node] = expression(tokens, i);
     end
 end
+function [i, args] = subscript(tokens, i, endToken)
+    args = List();
+    while ~strcmp(tokens(i).type, endToken)
+        [i, arg] = colonOrExpression(tokens, i);
+        args.append(arg);
+        if strcmp(tokens(i).type, 'comma')
+            i = i + 1;
+        elseif ~strcmp(tokens(i).type, endToken)
+            error('unexpected token');
+        end
+    end
+    args = args.toList(Expression.empty());
+end
 function [i, node] = reference(tokens, i)
     if i <= 0 || i > numel(tokens)
         error('index out of range');
@@ -238,20 +251,9 @@ function [i, node] = reference(tokens, i)
                 node = Field(node, node2);
             case 'lparen'
                 i = i + 1;
-                args = List();
-                while ~strcmp(tokens(i).type, 'rparen')
-                    [i, arg] = colonOrExpression(tokens, i);
-                    args.append(arg);
-                    switch tokens(i).type
-                        case 'rparen'
-                        case 'comma'
-                            i = i + 1;
-                        otherwise
-                            error('unexpected token');
-                    end
-                end
+                [i, args] = subscript(tokens, i, 'rparen');
                 i = i + 1;
-                node = PIndex(node, args.toList(Expression.empty()));
+                node = PIndex(node, args);
             case 'lbrace'
                 i = i + 1;
                 args = List();
