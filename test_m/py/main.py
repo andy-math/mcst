@@ -370,10 +370,11 @@ def mulDiv(tokens, i): # retval: [i, node]
     map = put(map, 'mrdivide', lambda tokens, i, node: wrap(lambda *args: MRDivide(*args), lambda *args: unary(*args), tokens, i, node))
     [i, node] = lookAhead(tokens, i, lambda *args: unary(*args), map, inf)
     return [i, node]
-def lookAhead(tokens, i, next, map, repeat): # retval: [i, node]
+def lookAhead(tokens, i, begin, map, repeat): # retval: [i, node]
     nargin = 5
     nargout = 2
-    [i, node] = mparen(next, tokens, i)
+    if not isempty(begin):
+        [i, node] = mparen(begin, tokens, i)
     count = 0
     while i <= numel(tokens) and isKey(map, mparen(tokens, i).type) and count < repeat:
         fun = mparen(map, mparen(tokens, i).type)
