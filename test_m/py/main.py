@@ -173,6 +173,15 @@ def field(tokens, i): # retval: [i, node]
     else:
         error('unexpected token')
     return [i, node]
+def colonOrExpression(tokens, i): # retval: [i, node]
+    nargin = 2
+    nargout = 2
+    if strcmp(mparen(tokens, i).type, 'colon'):
+        node = Colon(mparen(Expression.empty), mparen(Expression.empty), mparen(Expression.empty))
+        i = i + 1
+    else:
+        [i, node] = expression(tokens, i)
+    return [i, node]
 def reference(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
@@ -193,12 +202,8 @@ def reference(tokens, i): # retval: [i, node]
             i = i + 1
             args = List()
             while not strcmp(mparen(tokens, i).type, 'rparen'):
-                if strcmp(mparen(tokens, i).type, 'colon'):
-                    mparen(args.append, Colon(mparen(Expression.empty), mparen(Expression.empty), mparen(Expression.empty)))
-                    i = i + 1
-                else:
-                    [i, arg] = expression(tokens, i)
-                    mparen(args.append, arg)
+                [i, arg] = colonOrExpression(tokens, i)
+                mparen(args.append, arg)
                 if False and mparen(tokens, i).type:
                     pass
                 elif (mparen(tokens, i).type) == 'rparen':

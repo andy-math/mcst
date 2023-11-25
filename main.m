@@ -213,6 +213,14 @@ function [i, node] = field(tokens, i)
             error('unexpected token');
     end
 end
+function [i, node] = colonOrExpression(tokens, i)
+    if strcmp(tokens(i).type, 'colon')
+        node = Colon(Expression.empty(), Expression.empty(), Expression.empty());
+        i = i + 1;
+    else
+        [i, node] = expression(tokens, i);
+    end
+end
 function [i, node] = reference(tokens, i)
     if i <= 0 || i > numel(tokens)
         error('index out of range');
@@ -232,13 +240,8 @@ function [i, node] = reference(tokens, i)
                 i = i + 1;
                 args = List();
                 while ~strcmp(tokens(i).type, 'rparen')
-                    if strcmp(tokens(i).type, 'colon')
-                        args.append(Colon(Expression.empty(), Expression.empty(), Expression.empty()));
-                        i = i + 1;
-                    else
-                        [i, arg] = expression(tokens, i);
-                        args.append(arg);
-                    end
+                    [i, arg] = colonOrExpression(tokens, i);
+                    args.append(arg);
                     switch tokens(i).type
                         case 'rparen'
                         case 'comma'
