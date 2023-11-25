@@ -425,21 +425,10 @@ function [i, node] = lookAhead(tokens, i, next, map)
     end
 end
 function [i, node] = addSub(tokens, i)
-    [i, node] = mulDiv(tokens, i);
-    while i <= numel(tokens)
-        switch tokens(i).type
-            case 'plus'
-                i = i + 1;
-                [i, node2] = mulDiv(tokens, i);
-                node = Plus(node, node2);
-            case 'minus'
-                i = i + 1;
-                [i, node2] = mulDiv(tokens, i);
-                node = Minus(node, node2);
-            otherwise
-                break
-        end
-    end
+    map = dict();
+    map = put(map, 'plus', @(tokens, i, node)wrap(@Plus, @mulDiv, tokens, i, node));
+    map = put(map, 'minus', @(tokens, i, node)wrap(@Minus, @mulDiv, tokens, i, node));
+    [i, node] = lookAhead(tokens, i, @mulDiv, map);
 end
 function [i, node] = colonOperator(tokens, i)
     [i, node] = addSub(tokens, i);

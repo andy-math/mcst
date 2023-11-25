@@ -382,20 +382,10 @@ def lookAhead(tokens, i, next, map): # retval: [i, node]
 def addSub(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
-    [i, node] = mulDiv(tokens, i)
-    while i <= numel(tokens):
-        if False and mparen(tokens, i).type:
-            pass
-        elif (mparen(tokens, i).type) == 'plus':
-            i = i + 1
-            [i, node2] = mulDiv(tokens, i)
-            node = Plus(node, node2)
-        elif (mparen(tokens, i).type) == 'minus':
-            i = i + 1
-            [i, node2] = mulDiv(tokens, i)
-            node = Minus(node, node2)
-        else:
-            break
+    map = dict()
+    map = put(map, 'plus', lambda tokens, i, node: wrap(lambda *args: Plus(*args), lambda *args: mulDiv(*args), tokens, i, node))
+    map = put(map, 'minus', lambda tokens, i, node: wrap(lambda *args: Minus(*args), lambda *args: mulDiv(*args), tokens, i, node))
+    [i, node] = lookAhead(tokens, i, lambda *args: mulDiv(*args), map)
     return [i, node]
 def colonOperator(tokens, i): # retval: [i, node]
     nargin = 2
