@@ -361,42 +361,6 @@ def wrap(fun1, fun2, tokens, i, node): # retval: [i, node]
 def mulDiv(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
-    [_, node3] = mulDiv2(tokens, i)
-    [i, node] = unary(tokens, i)
-    while i <= numel(tokens):
-        if False and mparen(tokens, i).type:
-            pass
-        elif (mparen(tokens, i).type) == 'times':
-            i = i + 1
-            [i, node2] = unary(tokens, i)
-            node = Times(node, node2)
-        elif (mparen(tokens, i).type) == 'ldivide':
-            i = i + 1
-            [i, node2] = unary(tokens, i)
-            node = LDivide(node, node2)
-        elif (mparen(tokens, i).type) == 'rdivide':
-            i = i + 1
-            [i, node2] = unary(tokens, i)
-            node = RDivide(node, node2)
-        elif (mparen(tokens, i).type) == 'mtimes':
-            i = i + 1
-            [i, node2] = unary(tokens, i)
-            node = MTimes(node, node2)
-        elif (mparen(tokens, i).type) == 'mldivide':
-            i = i + 1
-            [i, node2] = unary(tokens, i)
-            node = MLDivide(node, node2)
-        elif (mparen(tokens, i).type) == 'mrdivide':
-            i = i + 1
-            [i, node2] = unary(tokens, i)
-            node = MRDivide(node, node2)
-        else:
-            break
-    assert(isequal(node, node3))
-    return [i, node]
-def mulDiv2(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
     map = dict()
     map = put(map, 'times', lambda tokens, i, node: wrap(lambda *args: Times(*args), lambda *args: unary(*args), tokens, i, node))
     map = put(map, 'ldivide', lambda tokens, i, node: wrap(lambda *args: LDivide(*args), lambda *args: unary(*args), tokens, i, node))

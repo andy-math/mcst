@@ -407,41 +407,6 @@ function [i, node] = wrap(fun1, fun2, tokens, i, node)
     node = fun1(node, node2);
 end
 function [i, node] = mulDiv(tokens, i)
-    [~, node3] = mulDiv2(tokens, i);
-    [i, node] = unary(tokens, i);
-    while i <= numel(tokens)
-        switch tokens(i).type
-            case 'times'
-                i = i + 1;
-                [i, node2] = unary(tokens, i);
-                node = Times(node, node2);
-            case 'ldivide'
-                i = i + 1;
-                [i, node2] = unary(tokens, i);
-                node = LDivide(node, node2);
-            case 'rdivide'
-                i = i + 1;
-                [i, node2] = unary(tokens, i);
-                node = RDivide(node, node2);
-            case 'mtimes'
-                i = i + 1;
-                [i, node2] = unary(tokens, i);
-                node = MTimes(node, node2);
-            case 'mldivide'
-                i = i + 1;
-                [i, node2] = unary(tokens, i);
-                node = MLDivide(node, node2);
-            case 'mrdivide'
-                i = i + 1;
-                [i, node2] = unary(tokens, i);
-                node = MRDivide(node, node2);
-            otherwise
-                break
-        end
-    end
-    assert(isequal(node, node3));
-end
-function [i, node] = mulDiv2(tokens, i)
     map = dict();
     map = put(map, 'times', @(tokens, i, node)wrap(@Times, @unary, tokens, i, node));
     map = put(map, 'ldivide', @(tokens, i, node)wrap(@LDivide, @unary, tokens, i, node));
