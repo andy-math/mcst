@@ -256,25 +256,9 @@ function [i, node] = reference(tokens, i)
                 node = PIndex(node, args);
             case 'lbrace'
                 i = i + 1;
-                args = List();
-                while ~strcmp(tokens(i).type, 'rbrace')
-                    if strcmp(tokens(i).type, 'colon')
-                        args.append(Colon());
-                        i = i + 1;
-                    else
-                        [i, arg] = expression(tokens, i);
-                        args.append(arg);
-                    end
-                    switch tokens(i).type
-                        case 'rbrace'
-                        case 'comma'
-                            i = i + 1;
-                        otherwise
-                            error('unexpected token');
-                    end
-                end
+                [i, args] = subscript(tokens, i, 'rbrace');
                 i = i + 1;
-                node = BIndex(node, args.toList(Expression.empty()));
+                node = BIndex(node, args);
             otherwise
                 break
         end

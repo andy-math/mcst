@@ -218,24 +218,9 @@ def reference(tokens, i): # retval: [i, node]
             node = PIndex(node, args)
         elif (mparen(tokens, i).type) == 'lbrace':
             i = i + 1
-            args = List()
-            while not strcmp(mparen(tokens, i).type, 'rbrace'):
-                if strcmp(mparen(tokens, i).type, 'colon'):
-                    mparen(args.append, Colon())
-                    i = i + 1
-                else:
-                    [i, arg] = expression(tokens, i)
-                    mparen(args.append, arg)
-                if False and mparen(tokens, i).type:
-                    pass
-                elif (mparen(tokens, i).type) == 'rbrace':
-                    pass
-                elif (mparen(tokens, i).type) == 'comma':
-                    i = i + 1
-                else:
-                    error('unexpected token')
+            [i, args] = subscript(tokens, i, 'rbrace')
             i = i + 1
-            node = BIndex(node, mparen(args.toList, mparen(Expression.empty)))
+            node = BIndex(node, args)
         else:
             break
     return [i, node]
