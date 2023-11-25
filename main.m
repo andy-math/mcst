@@ -414,23 +414,21 @@ function [i, node] = mulDiv(tokens, i)
     map = put(map, 'mtimes', @(tokens, i, node)wrap(@MTimes, @unary, tokens, i, node));
     map = put(map, 'mldivide', @(tokens, i, node)wrap(@MLDivide, @unary, tokens, i, node));
     map = put(map, 'mrdivide', @(tokens, i, node)wrap(@MRDivide, @unary, tokens, i, node));
-    [i, node] = lookAhead(tokens, i, @unary, map, inf);
+    [i, node] = lookAhead(tokens, i, @unary, map);
 end
-function [i, node] = lookAhead(tokens, i, next, map, repeat)
+function [i, node] = lookAhead(tokens, i, next, map)
     [i, node] = next(tokens, i);
-    count = 0;
-    while i <= numel(tokens) && isKey(map, tokens(i).type) && count < repeat
+    while i <= numel(tokens) && isKey(map, tokens(i).type)
         fun = map(tokens(i).type);
         i = i + 1;
         [i, node] = fun(tokens, i, node);
-        count = count + 1;
     end
 end
 function [i, node] = addSub(tokens, i)
     map = dict();
     map = put(map, 'plus', @(tokens, i, node)wrap(@Plus, @mulDiv, tokens, i, node));
     map = put(map, 'minus', @(tokens, i, node)wrap(@Minus, @mulDiv, tokens, i, node));
-    [i, node] = lookAhead(tokens, i, @mulDiv, map, inf);
+    [i, node] = lookAhead(tokens, i, @mulDiv, map);
 end
 function [i, node] = colonOperator(tokens, i)
     [i, node] = addSub(tokens, i);
@@ -454,17 +452,17 @@ function [i, node] = compare(tokens, i)
     map = put(map, 'gt', @(tokens, i, node)wrap(@GT, @colonOperator, tokens, i, node));
     map = put(map, 'eq', @(tokens, i, node)wrap(@EQ, @colonOperator, tokens, i, node));
     map = put(map, 'ne', @(tokens, i, node)wrap(@NE, @colonOperator, tokens, i, node));
-    [i, node] = lookAhead(tokens, i, @colonOperator, map, inf);
+    [i, node] = lookAhead(tokens, i, @colonOperator, map);
 end
 function [i, node] = logicalAnd(tokens, i)
     map = dict();
     map = put(map, 'and', @(tokens, i, node)wrap(@And, @compare, tokens, i, node));
-    [i, node] = lookAhead(tokens, i, @compare, map, inf);
+    [i, node] = lookAhead(tokens, i, @compare, map);
 end
 function [i, node] = logicalOr(tokens, i)
     map = dict();
     map = put(map, 'or', @(tokens, i, node)wrap(@Or, @logicalAnd, tokens, i, node));
-    [i, node] = lookAhead(tokens, i, @logicalAnd, map, inf);
+    [i, node] = lookAhead(tokens, i, @logicalAnd, map);
 end
 function [i, node] = expression(tokens, i)
     [i, node] = logicalOr(tokens, i);

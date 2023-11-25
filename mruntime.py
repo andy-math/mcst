@@ -230,6 +230,5 @@ true = True
 false = False
 string = str
 disp = print
-inf = float("inf")
 
 del Literal
