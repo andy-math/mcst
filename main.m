@@ -416,10 +416,8 @@ function [i, node] = mulDiv(tokens, i)
     map = put(map, 'mrdivide', @(tokens, i, node)wrap(@MRDivide, @unary, tokens, i, node));
     [i, node] = lookAhead(tokens, i, @unary, map, inf);
 end
-function [i, node] = lookAhead(tokens, i, begin, map, repeat)
-    if ~isempty(begin)
-        [i, node] = begin(tokens, i);
-    end
+function [i, node] = lookAhead(tokens, i, next, map, repeat)
+    [i, node] = next(tokens, i);
     count = 0;
     while i <= numel(tokens) && isKey(map, tokens(i).type) && count < repeat
         fun = map(tokens(i).type);
