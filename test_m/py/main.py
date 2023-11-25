@@ -90,7 +90,7 @@ def tokenize(s, table): # retval: tokens
         [j, type, token] = nextToken(s, j, table, lastToken)
         mparen(tokens.append, Token(type, token))
         lastToken = type
-    tokens = mparen(tokens.toList, [])
+    tokens = TokenList(mparen(tokens.toList, []))
     return tokens
 def nextToken(s, j, table, lastToken): # retval: [j, type, token]
     nargin = 4

@@ -224,6 +224,17 @@ def isequal(a: Any, b: Any) -> bool:
     return True
 
 
+class TokenList:
+    def __init__(self, tokens: list[str]) -> None:
+        self.tokens = tokens
+
+    def __getitem__(self, i: int) -> str:
+        return self.tokens[i]
+
+    def __len__(self) -> int:
+        return len(self.tokens)
+
+
 newline = "\n"
 numel = len
 true = True

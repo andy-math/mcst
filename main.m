@@ -118,7 +118,7 @@ function tokens = tokenize(s, table)
         tokens.append(Token(type, token));
         lastToken = type;
     end
-    tokens = tokens.toList([]);
+    tokens = TokenList(tokens.toList([]));
 end
 function [j, type, token] = nextToken(s, j, table, lastToken)
     while j <= numel(s) && s(j) == ' '
