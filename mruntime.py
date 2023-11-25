@@ -245,6 +245,12 @@ class TokenList:
         else:
             return self.tokens[self.i]
 
+    def ahead(self) -> Union[list[str], str]:
+        if self.i + 1 >= len(self.tokens):
+            return []
+        else:
+            return self.tokens[self.i + 1]
+
 
 newline = "\n"
 numel = len

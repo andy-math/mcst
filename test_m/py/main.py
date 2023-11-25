@@ -156,139 +156,117 @@ def nextToken(s, j, table, lastToken): # retval: [j, type, token]
         return [j, type, token]
     error('unknown token')
     return [j, type, token]
-def field(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+def field(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if False and mparen(tokens.get).type:
         pass
     elif (mparen(tokens.get).type) == 'identifier':
         node = Identifier(mparen(tokens.get).token)
-        i = i + 1
         mparen(tokens.next)
     elif (mparen(tokens.get).type) == 'lparen':
-        i = i + 1
         mparen(tokens.next)
-        [i, node] = expression(tokens, i)
+        node = expression(tokens)
         if not strcmp(mparen(tokens.get).type, 'rparen'):
             error('unexpected token')
-        i = i + 1
         mparen(tokens.next)
     else:
         error('unexpected token')
-    return [i, node]
-def colonOrExpression(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def colonOrExpression(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if strcmp(mparen(tokens.get).type, 'colon'):
         node = Colon(mparen(Expression.empty), mparen(Expression.empty), mparen(Expression.empty))
-        i = i + 1
         mparen(tokens.next)
     else:
-        [i, node] = expression(tokens, i)
-    return [i, node]
-def subscript(tokens, i, endToken): # retval: [i, args]
-    nargin = 3
-    nargout = 2
+        node = expression(tokens)
+    return node
+def subscript(tokens, endToken): # retval: args
+    nargin = 2
+    nargout = 1
     args = List()
     while not strcmp(mparen(tokens.get).type, endToken):
-        [i, arg] = colonOrExpression(tokens, i)
+        arg = colonOrExpression(tokens)
         mparen(args.append, arg)
         if strcmp(mparen(tokens.get).type, 'comma'):
-            i = i + 1
             mparen(tokens.next)
         elif not strcmp(mparen(tokens.get).type, endToken):
             error('unexpected token')
     args = mparen(args.toList, mparen(Expression.empty))
-    return [i, args]
-def reference(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
-    if i <= 0 or i > numel(tokens):
-        error('index out of range')
+    return args
+def reference(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not strcmp(mparen(tokens.get).type, 'identifier'):
         error('must be identifier')
     node = Identifier(mparen(tokens.get).token)
-    i = i + 1
     mparen(tokens.next)
-    while i <= numel(tokens):
+    while not isempty(mparen(tokens.get)):
         if False and mparen(tokens.get).type:
             pass
         elif (mparen(tokens.get).type) == 'field':
-            i = i + 1
             mparen(tokens.next)
-            [i, node2] = field(tokens, i)
+            node2 = field(tokens)
             node = Field(node, node2)
         elif (mparen(tokens.get).type) == 'lparen':
-            i = i + 1
             mparen(tokens.next)
-            [i, args] = subscript(tokens, i, 'rparen')
-            i = i + 1
+            args = subscript(tokens, 'rparen')
             mparen(tokens.next)
             node = PIndex(node, args)
         elif (mparen(tokens.get).type) == 'lbrace':
-            i = i + 1
             mparen(tokens.next)
-            [i, args] = subscript(tokens, i, 'rbrace')
-            i = i + 1
+            args = subscript(tokens, 'rbrace')
             mparen(tokens.next)
             node = BIndex(node, args)
         else:
             break
-    return [i, node]
-def matrixLine(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def matrixLine(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     args = List()
     if strcmp(mparen(tokens.get).type, 'comma'):
-        i = i + 1
         mparen(tokens.next)
     while not ismember(mparen(tokens.get).type, ['rsquare', 'rbrace', 'newline', 'semi']):
-        if strcmp(mparen(tokens.get).type, 'not') and ismember(mparen(tokens, i + 1).type, ['rsquare', 'rbrace', 'newline', 'semi', 'comma']):
+        if strcmp(mparen(tokens.get).type, 'not') and ismember(mparen(tokens.ahead).type, ['rsquare', 'rbrace', 'newline', 'semi', 'comma']):
             arg = Dismiss()
-            i = i + 1
             mparen(tokens.next)
         else:
-            [i, arg] = expression(tokens, i)
+            arg = expression(tokens)
         mparen(args.append, arg)
         if strcmp(mparen(tokens.get).type, 'comma'):
-            i = i + 1
             mparen(tokens.next)
     args = mparen(args.toList, mparen(Expression.empty))
     if isempty(args):
         node = mparen(MatrixLine.empty)
     else:
         node = MatrixLine(args)
-    return [i, node]
-def matrixLiteral(tokens, i, left, right, class_): # retval: [i, node]
-    nargin = 5
-    nargout = 2
+    return node
+def matrixLiteral(tokens, left, right, class_): # retval: node
+    nargin = 4
+    nargout = 1
     if not strcmp(mparen(tokens.get).type, left):
         error(['must be ', left])
-    i = i + 1
     mparen(tokens.next)
     args = List()
     while strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline'):
-        i = i + 1
         mparen(tokens.next)
     while not strcmp(mparen(tokens.get).type, right):
-        [i, arg] = matrixLine(tokens, i)
+        arg = matrixLine(tokens)
         mparen(args.append, arg)
         while strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline'):
-            i = i + 1
             mparen(tokens.next)
-    i = i + 1
     mparen(tokens.next)
     node = mparen(class_, mparen(args.toList, mparen(MatrixLine.empty)))
-    return [i, node]
-def lambda_(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def lambda_(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not strcmp(mparen(tokens.get).type, 'lambda'):
         error('unexpected token')
-    i = i + 1
     mparen(tokens.next)
     if strcmp(mparen(tokens.get).type, 'lparen'):
-        i = i + 1
         mparen(tokens.next)
         args = List()
         while not strcmp(mparen(tokens.get).type, 'rparen'):
@@ -296,370 +274,339 @@ def lambda_(tokens, i): # retval: [i, node]
                 error('unexpected token')
             arg = Identifier(mparen(tokens.get).token)
             mparen(args.append, arg)
-            i = i + 1
             mparen(tokens.next)
             if strcmp(mparen(tokens.get).type, 'comma'):
-                i = i + 1
                 mparen(tokens.next)
-        i = i + 1
         mparen(tokens.next)
         args = mparen(args.toList, mparen(Identifier.empty))
     else:
         args = mparen(Identifier.empty)
-    [i, node] = expression(tokens, i)
+    node = expression(tokens)
     node = Lambda(args, node)
-    return [i, node]
-def operand(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def operand(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if False and mparen(tokens.get).type:
         pass
     elif (mparen(tokens.get).type) in ['chars', 'string', 'number']:
         node = Literal(mparen(tokens.get).token)
-        i = i + 1
         mparen(tokens.next)
     elif (mparen(tokens.get).type) == 'lambda':
-        [i, node] = lambda_(tokens, i)
+        node = lambda_(tokens)
     elif (mparen(tokens.get).type) == 'lparen':
-        i = i + 1
         mparen(tokens.next)
-        [i, node] = expression(tokens, i)
+        node = expression(tokens)
         if not strcmp(mparen(tokens.get).type, 'rparen'):
             error('must be rparen')
-        i = i + 1
         mparen(tokens.next)
         node = Paren(node)
     elif (mparen(tokens.get).type) == 'lsquare':
-        [i, node] = matrixLiteral(tokens, i, 'lsquare', 'rsquare', lambda *args: Matrix(*args))
+        node = matrixLiteral(tokens, 'lsquare', 'rsquare', lambda *args: Matrix(*args))
     elif (mparen(tokens.get).type) == 'lbrace':
-        [i, node] = matrixLiteral(tokens, i, 'lbrace', 'rbrace', lambda *args: Cell(*args))
+        node = matrixLiteral(tokens, 'lbrace', 'rbrace', lambda *args: Cell(*args))
     elif (mparen(tokens.get).type) == 'identifier':
-        [i, node] = reference(tokens, i)
+        node = reference(tokens)
     elif (mparen(tokens.get).type) == 'keyword':
         if not strcmp(mparen(tokens.get).token, 'end'):
             error('must be end')
         node = Identifier('end')
-        i = i + 1
         mparen(tokens.next)
     else:
         error('unexpected token')
-    return [i, node]
-def transPower(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
-    [i, node] = operand(tokens, i)
-    while i <= numel(tokens):
+    return node
+def transPower(tokens): # retval: node
+    nargin = 1
+    nargout = 1
+    node = operand(tokens)
+    while not isempty(mparen(tokens.get)):
         if False and mparen(tokens.get).type:
             pass
         elif (mparen(tokens.get).type) == 'transpose':
-            i = i + 1
             mparen(tokens.next)
             node = Transpose(node)
         else:
             break
-    return [i, node]
-def unary(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def unary(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if False and mparen(tokens.get).type:
         pass
     elif (mparen(tokens.get).type) == 'plus':
-        i = i + 1
         mparen(tokens.next)
-        [i, node] = unary(tokens, i)
+        node = unary(tokens)
     elif (mparen(tokens.get).type) == 'minus':
-        i = i + 1
         mparen(tokens.next)
-        [i, node] = unary(tokens, i)
+        node = unary(tokens)
         node = Negative(node)
     elif (mparen(tokens.get).type) == 'not':
-        i = i + 1
         mparen(tokens.next)
-        [i, node] = unary(tokens, i)
+        node = unary(tokens)
         node = Not(node)
     else:
-        [i, node] = transPower(tokens, i)
-    return [i, node]
-def wrap(fun1, fun2, tokens, i, node): # retval: [i, node]
-    nargin = 5
-    nargout = 2
-    [i, node2] = mparen(fun2, tokens, i)
-    node = mparen(fun1, node, node2)
-    return [i, node]
-def mulDiv(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
-    map = dict()
-    map = put(map, 'times', lambda tokens, i, node: wrap(lambda *args: Times(*args), lambda *args: unary(*args), tokens, i, node))
-    map = put(map, 'ldivide', lambda tokens, i, node: wrap(lambda *args: LDivide(*args), lambda *args: unary(*args), tokens, i, node))
-    map = put(map, 'rdivide', lambda tokens, i, node: wrap(lambda *args: RDivide(*args), lambda *args: unary(*args), tokens, i, node))
-    map = put(map, 'mtimes', lambda tokens, i, node: wrap(lambda *args: MTimes(*args), lambda *args: unary(*args), tokens, i, node))
-    map = put(map, 'mldivide', lambda tokens, i, node: wrap(lambda *args: MLDivide(*args), lambda *args: unary(*args), tokens, i, node))
-    map = put(map, 'mrdivide', lambda tokens, i, node: wrap(lambda *args: MRDivide(*args), lambda *args: unary(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: unary(*args), map)
-    return [i, node]
-def lookAhead(tokens, i, next, map): # retval: [i, node]
+        node = transPower(tokens)
+    return node
+def wrap(fun1, fun2, tokens, node): # retval: node
     nargin = 4
-    nargout = 2
-    [i, node] = mparen(next, tokens, i)
-    while i <= numel(tokens) and isKey(map, mparen(tokens.get).type):
-        fun = mparen(map, mparen(tokens.get).type)
-        i = i + 1
-        mparen(tokens.next)
-        [i, node] = mparen(fun, tokens, i, node)
-    return [i, node]
-def addSub(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    nargout = 1
+    node2 = mparen(fun2, tokens)
+    node = mparen(fun1, node, node2)
+    return node
+def mulDiv(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     map = dict()
-    map = put(map, 'plus', lambda tokens, i, node: wrap(lambda *args: Plus(*args), lambda *args: mulDiv(*args), tokens, i, node))
-    map = put(map, 'minus', lambda tokens, i, node: wrap(lambda *args: Minus(*args), lambda *args: mulDiv(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: mulDiv(*args), map)
-    return [i, node]
-def colonOperator(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
-    [i, node] = addSub(tokens, i)
-    if i <= numel(tokens) and strcmp(mparen(tokens.get).type, 'colon'):
-        i = i + 1
+    map = put(map, 'times', lambda tokens, node: wrap(lambda *args: Times(*args), lambda *args: unary(*args), tokens, node))
+    map = put(map, 'ldivide', lambda tokens, node: wrap(lambda *args: LDivide(*args), lambda *args: unary(*args), tokens, node))
+    map = put(map, 'rdivide', lambda tokens, node: wrap(lambda *args: RDivide(*args), lambda *args: unary(*args), tokens, node))
+    map = put(map, 'mtimes', lambda tokens, node: wrap(lambda *args: MTimes(*args), lambda *args: unary(*args), tokens, node))
+    map = put(map, 'mldivide', lambda tokens, node: wrap(lambda *args: MLDivide(*args), lambda *args: unary(*args), tokens, node))
+    map = put(map, 'mrdivide', lambda tokens, node: wrap(lambda *args: MRDivide(*args), lambda *args: unary(*args), tokens, node))
+    node = lookAhead(tokens, lambda *args: unary(*args), map)
+    return node
+def lookAhead(tokens, next, map): # retval: node
+    nargin = 3
+    nargout = 1
+    node = mparen(next, tokens)
+    while not isempty(mparen(tokens.get)) and isKey(map, mparen(tokens.get).type):
+        fun = mparen(map, mparen(tokens.get).type)
         mparen(tokens.next)
-        [i, node2] = addSub(tokens, i)
-        if i <= numel(tokens) and strcmp(mparen(tokens.get).type, 'colon'):
-            i = i + 1
+        node = mparen(fun, tokens, node)
+    return node
+def addSub(tokens): # retval: node
+    nargin = 1
+    nargout = 1
+    map = dict()
+    map = put(map, 'plus', lambda tokens, node: wrap(lambda *args: Plus(*args), lambda *args: mulDiv(*args), tokens, node))
+    map = put(map, 'minus', lambda tokens, node: wrap(lambda *args: Minus(*args), lambda *args: mulDiv(*args), tokens, node))
+    node = lookAhead(tokens, lambda *args: mulDiv(*args), map)
+    return node
+def colonOperator(tokens): # retval: node
+    nargin = 1
+    nargout = 1
+    node = addSub(tokens)
+    if not isempty(mparen(tokens.get)) and strcmp(mparen(tokens.get).type, 'colon'):
+        mparen(tokens.next)
+        node2 = addSub(tokens)
+        if not isempty(mparen(tokens.get)) and strcmp(mparen(tokens.get).type, 'colon'):
             mparen(tokens.next)
-            [i, node3] = addSub(tokens, i)
+            node3 = addSub(tokens)
             node = Colon(node, node2, node3)
         else:
             node = Colon(node, mparen(Expression.empty), node2)
-    return [i, node]
-def compare(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def compare(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     map = dict()
-    map = put(map, 'le', lambda tokens, i, node: wrap(lambda *args: LE(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    map = put(map, 'ge', lambda tokens, i, node: wrap(lambda *args: GE(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    map = put(map, 'lt', lambda tokens, i, node: wrap(lambda *args: LT(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    map = put(map, 'gt', lambda tokens, i, node: wrap(lambda *args: GT(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    map = put(map, 'eq', lambda tokens, i, node: wrap(lambda *args: EQ(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    map = put(map, 'ne', lambda tokens, i, node: wrap(lambda *args: NE(*args), lambda *args: colonOperator(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: colonOperator(*args), map)
-    return [i, node]
-def logicalAnd(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    map = put(map, 'le', lambda tokens, node: wrap(lambda *args: LE(*args), lambda *args: colonOperator(*args), tokens, node))
+    map = put(map, 'ge', lambda tokens, node: wrap(lambda *args: GE(*args), lambda *args: colonOperator(*args), tokens, node))
+    map = put(map, 'lt', lambda tokens, node: wrap(lambda *args: LT(*args), lambda *args: colonOperator(*args), tokens, node))
+    map = put(map, 'gt', lambda tokens, node: wrap(lambda *args: GT(*args), lambda *args: colonOperator(*args), tokens, node))
+    map = put(map, 'eq', lambda tokens, node: wrap(lambda *args: EQ(*args), lambda *args: colonOperator(*args), tokens, node))
+    map = put(map, 'ne', lambda tokens, node: wrap(lambda *args: NE(*args), lambda *args: colonOperator(*args), tokens, node))
+    node = lookAhead(tokens, lambda *args: colonOperator(*args), map)
+    return node
+def logicalAnd(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     map = dict()
-    map = put(map, 'and', lambda tokens, i, node: wrap(lambda *args: And(*args), lambda *args: compare(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: compare(*args), map)
-    return [i, node]
-def logicalOr(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    map = put(map, 'and', lambda tokens, node: wrap(lambda *args: And(*args), lambda *args: compare(*args), tokens, node))
+    node = lookAhead(tokens, lambda *args: compare(*args), map)
+    return node
+def logicalOr(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     map = dict()
-    map = put(map, 'or', lambda tokens, i, node: wrap(lambda *args: Or(*args), lambda *args: logicalAnd(*args), tokens, i, node))
-    [i, node] = lookAhead(tokens, i, lambda *args: logicalAnd(*args), map)
-    return [i, node]
-def expression(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
-    [i, node] = logicalOr(tokens, i)
-    return [i, node]
-def modifier(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    map = put(map, 'or', lambda tokens, node: wrap(lambda *args: Or(*args), lambda *args: logicalAnd(*args), tokens, node))
+    node = lookAhead(tokens, lambda *args: logicalAnd(*args), map)
+    return node
+def expression(tokens): # retval: node
+    nargin = 1
+    nargout = 1
+    node = logicalOr(tokens)
+    return node
+def modifier(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not strcmp(mparen(tokens.get).type, 'identifier'):
         error('unexpected token')
     rvalue = Identifier(mparen(tokens.get).token)
-    i = i + 1
     mparen(tokens.next)
     if strcmp(mparen(tokens.get).type, 'assign'):
-        i = i + 1
         mparen(tokens.next)
         lvalue = rvalue
         rvalue = Identifier(mparen(tokens.get).token)
-        i = i + 1
         mparen(tokens.next)
     else:
         lvalue = mparen(Identifier.empty)
     node = Modifier(lvalue, rvalue)
-    return [i, node]
-def statement(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def statement(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if False and mparen(tokens.get).type:
         pass
     elif (mparen(tokens.get).type) in ['newline', 'semi']:
         error('unexpected token')
     elif (mparen(tokens.get).type) == 'keyword':
         keyword = mparen(tokens.get).token
-        i = i + 1
         mparen(tokens.next)
     else:
         keyword = ''
     if ismember(keyword, ['properties', 'classdef', 'methods']) and strcmp(mparen(tokens.get).type, 'lparen'):
-        i = i + 1
         mparen(tokens.next)
         modifiers = List()
         while not strcmp(mparen(tokens.get).type, 'rparen'):
             [i, mod] = modifier(tokens, i)
             mparen(modifiers.append, mod)
             if strcmp(mparen(tokens.get).type, 'comma'):
-                i = i + 1
                 mparen(tokens.next)
-        i = i + 1
         mparen(tokens.next)
         modifiers = mparen(modifiers.toList, mparen(Modifier.empty))
     else:
         modifiers = mparen(Modifier.empty)
-    if i <= numel(tokens) and not (strcmp(mparen(tokens.get).type, 'comment') or strcmp(mparen(tokens.get).type, 'newline')):
-        [i, rvalue] = expression(tokens, i)
-        if i <= numel(tokens) and strcmp(mparen(tokens.get).type, 'assign'):
-            i = i + 1
+    if not isempty(mparen(tokens.get)) and not (strcmp(mparen(tokens.get).type, 'comment') or strcmp(mparen(tokens.get).type, 'newline')):
+        rvalue = expression(tokens)
+        if not isempty(mparen(tokens.get)) and strcmp(mparen(tokens.get).type, 'assign'):
             mparen(tokens.next)
             lvalue = rvalue
-            [i, rvalue] = expression(tokens, i)
+            rvalue = expression(tokens)
         else:
             lvalue = mparen(Expression.empty)
-        if i <= numel(tokens) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'comma')):
-            i = i + 1
+        if not isempty(mparen(tokens.get)) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'comma')):
             mparen(tokens.next)
     else:
         lvalue = mparen(Expression.empty)
         rvalue = mparen(Expression.empty)
-    if i <= numel(tokens) and strcmp(mparen(tokens.get).type, 'comment'):
+    if not isempty(mparen(tokens.get)) and strcmp(mparen(tokens.get).type, 'comment'):
         comment = mparen(tokens.get).token
-        i = i + 1
         mparen(tokens.next)
     else:
         comment = []
     node = Statement(keyword, modifiers, lvalue, rvalue, comment)
-    while i <= numel(tokens) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'comma') or strcmp(mparen(tokens.get).type, 'newline')):
-        i = i + 1
+    while not isempty(mparen(tokens.get)) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'comma') or strcmp(mparen(tokens.get).type, 'newline')):
         mparen(tokens.next)
-    return [i, node]
-def variableDeclare(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def variableDeclare(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     # name type = default
     if not strcmp(mparen(tokens.get).type, 'identifier'):
         error('unexpected token')
     name = mparen(tokens.get).token
-    i = i + 1
     mparen(tokens.next)
     if strcmp(mparen(tokens.get).type, 'identifier'):
         type = mparen(tokens.get).token
-        i = i + 1
         mparen(tokens.next)
     else:
         type = ''
     if strcmp(mparen(tokens.get).type, 'assign'):
-        i = i + 1
         mparen(tokens.next)
-        [i, expr] = expression(tokens, i)
+        expr = expression(tokens)
     else:
         expr = mparen(Expression.empty)
-    if i <= numel(tokens) and strcmp(mparen(tokens.get).type, 'comment'):
+    if not isempty(mparen(tokens.get)) and strcmp(mparen(tokens.get).type, 'comment'):
         comment = mparen(tokens.get).token
-        i = i + 1
         mparen(tokens.next)
     else:
         comment = []
     node = Variable(name, type, expr, comment)
-    while i <= numel(tokens) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline')):
-        i = i + 1
+    while not isempty(mparen(tokens.get)) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline')):
         mparen(tokens.next)
-    return [i, node]
+    return node
 def program(tokens): # retval: blocks
     nargin = 1
     nargout = 1
     blocks = List()
-    i = 1
-    while i <= numel(tokens):
+    while not isempty(mparen(tokens.get)):
         while strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline'):
-            i = i + 1
-        [i, blk] = block(tokens, i)
+            mparen(tokens.next)
+        blk = block(tokens)
         mparen(blocks.append, blk)
     blocks = mparen(blocks.toList, mparen(Segment.empty))
     return blocks
-def controlBlock(tokens, i, token, class_): # retval: [i, node]
-    nargin = 4
-    nargout = 2
+def controlBlock(tokens, token, class_): # retval: node
+    nargin = 3
+    nargout = 1
     if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, token)):
         error(['expect ', token])
-    [i, head] = statement(tokens, i)
+    head = statement(tokens)
     args = List()
     while not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'end')):
-        [i, arg] = block(tokens, i)
+        arg = block(tokens)
         mparen(args.append, arg)
-    [i, end_] = statement(tokens, i)
+    end_ = statement(tokens)
     node = mparen(class_, head, mparen(args.toList, mparen(Segment.empty)), end_)
-    return [i, node]
-def ifBlock(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def ifBlock(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'if')):
         error('expect if')
     branch = List()
     while not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'end')):
-        [i, head] = statement(tokens, i)
+        head = statement(tokens)
         args = List()
         while not (strcmp(mparen(tokens.get).type, 'keyword') and ismember(mparen(tokens.get).token, ['end', 'else', 'elseif'])):
-            [i, arg] = block(tokens, i)
+            arg = block(tokens)
             mparen(args.append, arg)
         mparen(branch.append, IfBranch(head, mparen(args.toList, mparen(Statement.empty))))
-    [i, end_] = statement(tokens, i)
+    end_ = statement(tokens)
     node = If(mparen(branch.toList, mparen(IfBranch.empty)), end_)
-    return [i, node]
-def switchBlock(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def switchBlock(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'switch')):
         error('expect switch')
-    [i, expr] = statement(tokens, i)
+    expr = statement(tokens)
     branch = List()
     while not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'end')):
-        [i, head] = statement(tokens, i)
+        head = statement(tokens)
         args = List()
         while not (strcmp(mparen(tokens.get).type, 'keyword') and ismember(mparen(tokens.get).token, ['end', 'case', 'otherwise'])):
-            [i, arg] = block(tokens, i)
+            arg = block(tokens)
             mparen(args.append, arg)
         mparen(branch.append, SwitchCase(head, mparen(args.toList, mparen(Segment.empty))))
-    [i, end_] = statement(tokens, i)
+    end_ = statement(tokens)
     node = Switch(expr, mparen(branch.toList, mparen(SwitchCase.empty)), end_)
-    return [i, node]
-def propertiesBlock(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def propertiesBlock(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'properties')):
         error('expect properties')
-    [i, head] = statement(tokens, i)
+    head = statement(tokens)
     props = List()
     while not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'end')):
-        [i, prop] = variableDeclare(tokens, i)
+        prop = variableDeclare(tokens)
         mparen(props.append, prop)
-    [i, end_] = statement(tokens, i)
+    end_ = statement(tokens)
     node = Properties(head, mparen(props.toList, mparen(Statement.empty)), end_)
-    return [i, node]
-def methodsBlock(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def methodsBlock(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'methods')):
         error('expect methods')
-    [i, head] = statement(tokens, i)
+    head = statement(tokens)
     meth = List()
     while not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'end')):
         if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'function')):
             error('unexpected token')
-        [i, fun] = block(tokens, i)
+        fun = block(tokens)
         mparen(meth.append, fun)
-    [i, end_] = statement(tokens, i)
+    end_ = statement(tokens)
     node = Methods(head, mparen(meth.toList, mparen(Function.empty)), end_)
-    return [i, node]
-def classBlock(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def classBlock(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'classdef')):
         error('expect classdef')
-    [i, head] = statement(tokens, i)
+    head = statement(tokens)
     property = List()
     method = List()
     while not (strcmp(mparen(tokens.get).type, 'keyword') and strcmp(mparen(tokens.get).token, 'end')):
@@ -668,45 +615,45 @@ def classBlock(tokens, i): # retval: [i, node]
         if False and mparen(tokens.get).token:
             pass
         elif (mparen(tokens.get).token) == 'properties':
-            [i, prop] = propertiesBlock(tokens, i)
+            prop = propertiesBlock(tokens)
             mparen(property.append, prop)
         elif (mparen(tokens.get).token) == 'methods':
-            [i, meth] = methodsBlock(tokens, i)
+            meth = methodsBlock(tokens)
             mparen(method.append, meth)
         else:
             error('unexpected keyword')
     property = mparen(property.toList, mparen(Properties.empty))
     method = mparen(method.toList, mparen(Methods.empty))
-    [i, end_] = statement(tokens, i)
+    end_ = statement(tokens)
     node = ClassDef(head, property, method, end_)
-    return [i, node]
-def block(tokens, i): # retval: [i, node]
-    nargin = 2
-    nargout = 2
+    return node
+def block(tokens): # retval: node
+    nargin = 1
+    nargout = 1
     if not strcmp(mparen(tokens.get).type, 'keyword'):
-        [i, node] = statement(tokens, i)
-        return [i, node]
+        node = statement(tokens)
+        return node
     if False and mparen(tokens.get).token:
         pass
     elif (mparen(tokens.get).token) in ['return', 'continue', 'break']:
-        [i, node] = statement(tokens, i)
+        node = statement(tokens)
     elif (mparen(tokens.get).token) == 'for':
-        [i, node] = controlBlock(tokens, i, 'for', lambda *args: For(*args))
+        node = controlBlock(tokens, 'for', lambda *args: For(*args))
     elif (mparen(tokens.get).token) == 'while':
-        [i, node] = controlBlock(tokens, i, 'while', lambda *args: While(*args))
+        node = controlBlock(tokens, 'while', lambda *args: While(*args))
     elif (mparen(tokens.get).token) == 'function':
-        [i, node] = controlBlock(tokens, i, 'function', lambda *args: Function(*args))
+        node = controlBlock(tokens, 'function', lambda *args: Function(*args))
     elif (mparen(tokens.get).token) == 'if':
-        [i, node] = ifBlock(tokens, i)
+        node = ifBlock(tokens)
     elif (mparen(tokens.get).token) == 'switch':
-        [i, node] = switchBlock(tokens, i)
+        node = switchBlock(tokens)
     elif (mparen(tokens.get).token) == 'classdef':
-        [i, node] = classBlock(tokens, i)
+        node = classBlock(tokens)
     else:
         error('unexpected keyword')
-    while i <= numel(tokens) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline') or strcmp(mparen(tokens.get).type, 'comma')):
-        i = i + 1
-    return [i, node]
+    while not isempty(mparen(tokens.get)) and (strcmp(mparen(tokens.get).type, 'semi') or strcmp(mparen(tokens.get).type, 'newline') or strcmp(mparen(tokens.get).type, 'comma')):
+        mparen(tokens.next)
+    return node
 clc()
 clear()
 close('all')

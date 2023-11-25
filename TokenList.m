@@ -25,6 +25,13 @@ classdef TokenList < handle
                 v = self.tokens(self.i);
             end
         end
+        function v = ahead(self)
+            if self.i+1 > numel(self.tokens)
+                v = [];
+            else
+                v = self.tokens(self.i+1);
+            end
+        end
     end
 end
 
