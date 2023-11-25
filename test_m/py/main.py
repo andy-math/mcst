@@ -404,34 +404,14 @@ def colonOperator(tokens, i): # retval: [i, node]
 def compare(tokens, i): # retval: [i, node]
     nargin = 2
     nargout = 2
-    [i, node] = colonOperator(tokens, i)
-    if i <= numel(tokens):
-        if False and mparen(tokens, i).type:
-            pass
-        elif (mparen(tokens, i).type) == 'le':
-            i = i + 1
-            [i, node2] = colonOperator(tokens, i)
-            node = LE(node, node2)
-        elif (mparen(tokens, i).type) == 'ge':
-            i = i + 1
-            [i, node2] = colonOperator(tokens, i)
-            node = GE(node, node2)
-        elif (mparen(tokens, i).type) == 'lt':
-            i = i + 1
-            [i, node2] = colonOperator(tokens, i)
-            node = LT(node, node2)
-        elif (mparen(tokens, i).type) == 'gt':
-            i = i + 1
-            [i, node2] = colonOperator(tokens, i)
-            node = GT(node, node2)
-        elif (mparen(tokens, i).type) == 'eq':
-            i = i + 1
-            [i, node2] = colonOperator(tokens, i)
-            node = EQ(node, node2)
-        elif (mparen(tokens, i).type) == 'ne':
-            i = i + 1
-            [i, node2] = colonOperator(tokens, i)
-            node = NE(node, node2)
+    map = dict()
+    map = put(map, 'le', lambda tokens, i, node: wrap(lambda *args: LE(*args), lambda *args: colonOperator(*args), tokens, i, node))
+    map = put(map, 'ge', lambda tokens, i, node: wrap(lambda *args: GE(*args), lambda *args: colonOperator(*args), tokens, i, node))
+    map = put(map, 'lt', lambda tokens, i, node: wrap(lambda *args: LT(*args), lambda *args: colonOperator(*args), tokens, i, node))
+    map = put(map, 'gt', lambda tokens, i, node: wrap(lambda *args: GT(*args), lambda *args: colonOperator(*args), tokens, i, node))
+    map = put(map, 'eq', lambda tokens, i, node: wrap(lambda *args: EQ(*args), lambda *args: colonOperator(*args), tokens, i, node))
+    map = put(map, 'ne', lambda tokens, i, node: wrap(lambda *args: NE(*args), lambda *args: colonOperator(*args), tokens, i, node))
+    [i, node] = lookAhead(tokens, i, lambda *args: colonOperator(*args), map)
     return [i, node]
 def logicalAnd(tokens, i): # retval: [i, node]
     nargin = 2

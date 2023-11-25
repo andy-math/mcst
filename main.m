@@ -445,35 +445,14 @@ function [i, node] = colonOperator(tokens, i)
     end
 end
 function [i, node] = compare(tokens, i)
-    [i, node] = colonOperator(tokens, i);
-    if i <= numel(tokens)
-        switch tokens(i).type
-            case 'le'
-                i = i + 1;
-                [i, node2] = colonOperator(tokens, i);
-                node = LE(node, node2);
-            case 'ge'
-                i = i + 1;
-                [i, node2] = colonOperator(tokens, i);
-                node = GE(node, node2);
-            case 'lt'
-                i = i + 1;
-                [i, node2] = colonOperator(tokens, i);
-                node = LT(node, node2);
-            case 'gt'
-                i = i + 1;
-                [i, node2] = colonOperator(tokens, i);
-                node = GT(node, node2);
-            case 'eq'
-                i = i + 1;
-                [i, node2] = colonOperator(tokens, i);
-                node = EQ(node, node2);
-            case 'ne'
-                i = i + 1;
-                [i, node2] = colonOperator(tokens, i);
-                node = NE(node, node2);
-        end
-    end
+    map = dict();
+    map = put(map, 'le', @(tokens, i, node)wrap(@LE, @colonOperator, tokens, i, node));
+    map = put(map, 'ge', @(tokens, i, node)wrap(@GE, @colonOperator, tokens, i, node));
+    map = put(map, 'lt', @(tokens, i, node)wrap(@LT, @colonOperator, tokens, i, node));
+    map = put(map, 'gt', @(tokens, i, node)wrap(@GT, @colonOperator, tokens, i, node));
+    map = put(map, 'eq', @(tokens, i, node)wrap(@EQ, @colonOperator, tokens, i, node));
+    map = put(map, 'ne', @(tokens, i, node)wrap(@NE, @colonOperator, tokens, i, node));
+    [i, node] = lookAhead(tokens, i, @colonOperator, map);
 end
 function [i, node] = logicalAnd(tokens, i)
     [i, node] = compare(tokens, i);
