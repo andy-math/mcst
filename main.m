@@ -93,9 +93,9 @@ compareFile('m2py.m', testdir + "/m2py.m");
 %                      | 'literal'
 %                      | '(' expression ')'
 % powerTrans2         -> '.''' powerTrans2
-%                      | '.^' powerTrans2
+%                      | '.^' operand powerTrans2
 %                      | '''' powerTrans2
-%                      | '^' powerTrans2
+%                      | '^' operand powerTrans2
 %                      | ''
 % powerTrans          -> operand powerTrans2
 % unary               -> '+' unary
