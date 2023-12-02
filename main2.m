@@ -119,12 +119,6 @@ grammar.('matrix2') = {
     };
 grammar.('matrix') = {{'[','commaSeparatedExprOrEmpty','matrix2',']'}};
 grammar.('cell') = {{'{','commaSeparatedExprOrEmpty','matrix2','}'}};
-grammar.('entry') = {{'expression','newline'}};
-grammar.('code2') = {
-    {'entry','code2'}
-    {}
-    };
-grammar.('code') = {{'code2','eof'}};
 grammar.('commaSeparatedIdentifier2') = {
     {',','identifier','commaSeparatedIdentifier2'}
     {}
@@ -138,6 +132,15 @@ grammar.('lambdaBody') = {
     {'identifier'}
     };
 grammar.('lambda') = {{'@','lambdaBody'}};
+grammar.('expressionOrEmpty') = {
+    {'expression'}
+    {}
+    };
+grammar.('line') = {
+    {'newline','expressionOrEmpty','line'}
+    {}
+    };
+grammar.('code') = {{'expressionOrEmpty','line','eof'}};
 terms = fieldnames(grammar);
 first = struct();
 follow = struct();
@@ -169,7 +172,7 @@ function node = parse(tokens,term,grammar,first,follow)
     else
         sym = tokens.get().token;
     end
-    if ismember('',[first.(term){:}]) && ismember(sym,follow.(term))
+    if any(strcmp('',[first.(term){:}])) && ismember(sym,follow.(term))
         node = [];
         return
     end
