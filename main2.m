@@ -27,7 +27,6 @@ grammar.('operand') = {
     {'(','expression',')'}
     {'matrix'}
     {'cell'}
-    {'lambda'}
     };
 grammar.('powerTrans2') = {
     {'.''', 'powerTrans2'}
@@ -95,13 +94,15 @@ grammar.('logiAnd2') = {
     {}
     };
 grammar.('logiAnd') = {{'elemOr','logiAnd2'}};
-
 grammar.('logiOr2') = {
     {'||','logiAnd','logiOr2'}
     {}
     };
 grammar.('logiOr') = {{'logiAnd','logiOr2'}};
-grammar.('expression') = {{'logiOr'}};
+grammar.('expression') = {
+    {'logiOr'}
+    {'lambda'}
+    };
 grammar.('commaSeparatedExpr2') = {
     {',','expression','commaSeparatedExpr2'}
     {}
@@ -151,7 +152,6 @@ for i = 1:numel(terms)
     end
     print(terms{i},grammar.(terms{i}),first.(terms{i}),follow.(terms{i}));
 end
-return
 content = readFile('expr.txt');
 tokens = tokenize(content);
 parse(tokens,'code',grammar,first,follow)
