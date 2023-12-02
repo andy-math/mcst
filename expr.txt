@@ -1,0 +1,1379 @@
+And < Expression
+And(a, b)
+a
+b
+BIndex < Expression
+BIndex(value, index)
+value
+index
+Cell < Expression
+Cell(line)
+line
+ClassDef < Segment
+ClassDef(head, property, method, end_)
+head
+property
+method
+end_
+Colon < Expression
+Colon(begin, step, end_)
+begin
+step
+end_
+Dismiss < Expression
+EQ < Expression
+EQ(a, b)
+a
+b
+Expression < matlab.mixin.Heterogeneous
+Field < Expression
+Field(value, field)
+value
+field
+For < Segment
+For(head, body, end_)
+head
+body
+end_
+Function < Segment
+Function(head, body, end_)
+head
+body
+end_
+GE < Expression
+GE(a, b)
+a
+b
+GT < Expression
+GT(a, b)
+a
+b
+Identifier < Expression
+Identifier(identifier)
+identifier
+If < Segment
+If(body, end_)
+body
+end_
+IfBranch < Segment
+IfBranch(head, body)
+head
+body
+LDivide < Expression
+LDivide(a, b)
+a
+b
+LE < Expression
+LE(a, b)
+a
+b
+LT < Expression
+LT(a, b)
+a
+b
+Lambda < Expression
+Lambda(args, expr)
+args
+expr
+Literal < Expression
+Literal(value)
+value
+MLDivide < Expression
+MLDivide(a, b)
+a
+b
+MRDivide < Expression
+MRDivide(a, b)
+a
+b
+MTimes < Expression
+MTimes(a, b)
+a
+b
+Matrix < Expression
+Matrix(line)
+line
+MatrixLine < Expression
+MatrixLine(item)
+item
+Methods < Segment
+Methods(head, fun, end_)
+head
+fun
+end_
+Minus < Expression
+Minus(a, b)
+a
+b
+Modifier < Expression
+Modifier(lvalue, rvalue)
+lvalue
+rvalue
+NE < Expression
+NE(a, b)
+a
+b
+Negative < Expression
+Negative(expr)
+expr
+Not < Expression
+Not(value)
+value
+Or < Expression
+Or(a, b)
+a
+b
+PIndex < Expression
+PIndex(value, index)
+value
+index
+Paren < Expression
+Paren(value)
+value
+Plus < Expression
+Plus(a, b)
+a
+b
+Properties < Segment
+Properties(head, prop, end_)
+head
+prop
+end_
+RDivide < Expression
+RDivide(a, b)
+a
+b
+Segment < matlab.mixin.Heterogeneous
+Statement < Segment
+Statement(keyword, modifier, lvalue, rvalue, comment)
+keyword
+modifier
+lvalue
+rvalue
+comment
+Switch < Segment
+Switch(head, body, end_)
+head
+body
+end_
+SwitchCase < Segment
+SwitchCase(head, body)
+head
+body
+Times < Expression
+Times(a, b)
+a
+b
+Token
+Token(type, token)
+type
+token
+Transpose < Expression
+Transpose(value)
+value
+Variable < Segment
+Variable(name, type, default, comment)
+name
+type
+default
+comment
+While < Segment
+While(head, body, end_)
+head
+body
+end_
+clc()
+clear()
+close('all')
+[
+    {'and', '&&'}
+    {'or', '||'}
+    {'times', '.*'}
+    {'rdivide', './'}
+    {'ldivide', '.\'}
+    {'transpose', '.'''}
+    {'eq', '=='}
+    {'ne', '~='}
+    {'le', '<='}
+    {'ge', '>='}
+    {'lparen', '('}
+    {'rparen', ')'}
+    {'lsquare', '['}
+    {'rsquare', ']'}
+    {'lbrace', '{'}
+    {'rbrace', '}'}
+    {'semi', ';'}
+    {'colon', ':'}
+    {'comma', ','}
+    {'plus', '+'}
+    {'minus', '-'}
+    {'mtimes', '*'}
+    {'mrdivide', '/'}
+    {'mldivide', '\'}
+    {'lt', '<'}
+    {'gt', '>'}
+    {'assign', '='}
+    {'not', '~'}
+    {'field', '.'}
+    {'lambda', '@'}
+    {'newline', newline}
+    ]
+configure()
+isfolder(pydir + "/nodes")
+rmdir(pydir + "/nodes", 's')
+mkdir(pydir + "/nodes")
+isfile('expr.txt')
+delete('expr.txt')
+fopen(pydir + "/main.py", 'wt+')
+dir('mcst')
+1 : numel(files)
+~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
+parseFile("mcst/" + files(i).name, table)
+output(testdir + "/" + files(i).name, node)
+m2py(pydir + "/nodes/" + files(i).name(1 : end - 2) + ".py", node)
+fprintf(fid, 'from test_m.py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2))
+compareFile("mcst/" + files(i).name, testdir + "/" + files(i).name)
+fprintf(fid, 'from test_m.py.output import output\n')
+fprintf(fid, 'from test_m.py.m2py import m2py\n')
+fclose(fid)
+isfile(pydir + "/output.py")
+delete(pydir + "/output.py")
+fopen(pydir + "/m2py.py", 'wt+')
+fprintf(fid, 'from test_m.py.nodes.Segment import Segment\n')
+fprintf(fid, 'from test_m.py.nodes.Matrix import Matrix\n')
+fprintf(fid, 'from test_m.py.nodes.MatrixLine import MatrixLine\n')
+fclose(fid)
+parseFile('main.m', table)
+output(testdir + "/main.m", node)
+m2py(pydir + "/main.py", node)
+compareFile('main.m', testdir + "/main.m")
+parseFile('output.m', table)
+output(testdir + "/output.m", node)
+m2py(pydir + "/output.py", node)
+compareFile('output.m', testdir + "/output.m")
+output(testdir + "/List.m", parseFile('List.m', table))
+compareFile('List.m', testdir + "/List.m")
+parseFile('m2py.m', table)
+output(testdir + "/m2py.m", node)
+m2py(pydir + "/m2py.py", node)
+compareFile('m2py.m', testdir + "/m2py.m")
+compareFile(file1, file2)
+readFile(file1)
+readFile(file2)
+split(replace(content1, ' ', ''), newline)
+split(replace(content2, ' ', ''), newline)
+numel(content1) ~= numel(content2)
+warning('length of %s not equal with length of %s', file1, file2)
+find(cellfun(@(a, b)~strcmp(a, b), content1, content2))
+~isempty(d)
+warning('%s vs %s: diff found in line %s\n', file1, file2, mat2str(d))
+disp(file1 + " vs " + file2 + ": equal without space")
+readFile(filename)
+fopen(filename)
+native2unicode(fread(fid).')
+fclose(fid)
+contains(content, sprintf('\r\n'))
+replace(content, sprintf('\r\n'), newline)
+parseFile(filename, table)
+readFile(filename)
+program(tokenize(content, table))
+tokenize(s, table)
+1
+List()
+0
+''
+j < numel(s)
+count + 1
+nextToken(s, j, table, lastToken)
+tokens.append(Token(type, token))
+type
+TokenList(tokens.toList([]))
+nextToken(s, j, table, lastToken)
+j <= numel(s) && s(j) == ' '
+j + 1
+1 : size(table, 1)
+j + numel(table{i, 2}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i, 2}) - 1), table{i, 2})
+table{i, 1}
+table{i, 2}
+j + numel(table{i, 2})
+s(j) == ''''
+strcmp(lastToken, 'identifier') || strcmp(lastToken, 'number')
+'ctranspose'
+''''
+j + 1
+j
+j + 1
+j <= numel(s) && ~(s(j) == '''' && (j + 1 > numel(s) || s(j + 1) ~= ''''))
+j + 1 + (s(j) == '''')
+j + 1
+'chars'
+s(i : j - 1)
+s(j) == '"'
+j
+j + 1
+j <= numel(s) && ~(s(j) == '"' && (j + 1 > numel(s) || s(j + 1) ~= '"'))
+j + 1 + (s(j) == '"')
+j + 1
+'string'
+s(i : j - 1)
+('a' <= s(j) && s(j) <= 'z') || ('A' <= s(j) && s(j) <= 'Z')
+j
+j <= numel(s) && (('a' <= s(j) && s(j) <= 'z') || ('A' <= s(j) && s(j) <= 'Z') || ('0' <= s(j) && s(j) <= '9') || s(j) == '_')
+j + 1
+s(i : j - 1)
+ismember(token, {'return', 'break', 'continue', 'if', 'elseif', 'for', 'else', 'while', 'end', 'function', 'switch', 'case', 'otherwise', 'classdef', 'properties', 'methods'})
+'keyword'
+'identifier'
+('0' <= s(j) && s(j) <= '9') || (s(j) == '.' && j + 1 <= numel(s) && '0' <= s(j + 1) && s(j + 1) <= '9')
+j
+false
+false
+false
+j <= numel(s) && (('0' <= s(j) && s(j) <= '9') || (~dot && ~exp && s(j) == '.') || (~exp && s(j) == 'e') || (exp && ~sign && (s(j) == '-' || s(j) == '+')))
+j + 1
+'number'
+s(i : j - 1)
+s(j) == '%'
+j
+j <= numel(s) && s(j) ~= newline
+j + 1
+'comment'
+s(i : j - 1)
+error('unknown token')
+field(tokens)
+tokens.get().type
+'identifier'
+Identifier(tokens.get().token)
+tokens.next()
+'lparen'
+tokens.next()
+expression(tokens)
+~strcmp(tokens.get().type, 'rparen')
+error('unexpected token')
+tokens.next()
+error('unexpected token')
+colonOrExpression(tokens)
+strcmp(tokens.get().type, 'colon')
+Colon(Expression.empty(), Expression.empty(), Expression.empty())
+tokens.next()
+expression(tokens)
+subscript(tokens, endToken)
+List()
+~strcmp(tokens.get().type, endToken)
+colonOrExpression(tokens)
+args.append(arg)
+strcmp(tokens.get().type, 'comma')
+tokens.next()
+~strcmp(tokens.get().type, endToken)
+error('unexpected token')
+args.toList(Expression.empty())
+reference(tokens)
+~strcmp(tokens.get().type, 'identifier')
+error('must be identifier')
+Identifier(tokens.get().token)
+tokens.next()
+~isempty(tokens.get())
+tokens.get().type
+'field'
+tokens.next()
+field(tokens)
+Field(node, node2)
+'lparen'
+tokens.next()
+subscript(tokens, 'rparen')
+tokens.next()
+PIndex(node, args)
+'lbrace'
+tokens.next()
+subscript(tokens, 'rbrace')
+tokens.next()
+BIndex(node, args)
+matrixLine(tokens)
+List()
+strcmp(tokens.get().type, 'comma')
+tokens.next()
+~ismember(tokens.get().type, {'rsquare', 'rbrace', 'newline', 'semi'})
+strcmp(tokens.get().type, 'not') && ismember(tokens.ahead().type, {'rsquare', 'rbrace', 'newline', 'semi', 'comma'})
+Dismiss()
+tokens.next()
+expression(tokens)
+args.append(arg)
+strcmp(tokens.get().type, 'comma')
+tokens.next()
+args.toList(Expression.empty())
+isempty(args)
+MatrixLine.empty()
+MatrixLine(args)
+matrixLiteral(tokens, left, right, class_)
+~strcmp(tokens.get().type, left)
+error(['must be ', left])
+tokens.next()
+List()
+strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline')
+tokens.next()
+~strcmp(tokens.get().type, right)
+matrixLine(tokens)
+args.append(arg)
+strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline')
+tokens.next()
+tokens.next()
+class_(args.toList(MatrixLine.empty()))
+lambda_(tokens)
+~strcmp(tokens.get().type, 'lambda')
+error('unexpected token')
+tokens.next()
+strcmp(tokens.get().type, 'lparen')
+tokens.next()
+List()
+~strcmp(tokens.get().type, 'rparen')
+~strcmp(tokens.get().type, 'identifier')
+error('unexpected token')
+Identifier(tokens.get().token)
+args.append(arg)
+tokens.next()
+strcmp(tokens.get().type, 'comma')
+tokens.next()
+tokens.next()
+args.toList(Identifier.empty())
+Identifier.empty()
+expression(tokens)
+Lambda(args, node)
+operand(tokens)
+tokens.get().type
+{'chars', 'string', 'number'}
+Literal(tokens.get().token)
+tokens.next()
+'lambda'
+lambda_(tokens)
+'lparen'
+tokens.next()
+expression(tokens)
+~strcmp(tokens.get().type, 'rparen')
+error('must be rparen')
+tokens.next()
+Paren(node)
+'lsquare'
+matrixLiteral(tokens, 'lsquare', 'rsquare', @Matrix)
+'lbrace'
+matrixLiteral(tokens, 'lbrace', 'rbrace', @Cell)
+'identifier'
+reference(tokens)
+'keyword'
+~strcmp(tokens.get().token, 'end')
+error('must be end')
+Identifier('end')
+tokens.next()
+error('unexpected token')
+transPower(tokens)
+operand(tokens)
+~isempty(tokens.get())
+tokens.get().type
+'transpose'
+tokens.next()
+Transpose(node)
+unary(tokens)
+tokens.get().type
+'plus'
+tokens.next()
+unary(tokens)
+'minus'
+tokens.next()
+unary(tokens)
+Negative(node)
+'not'
+tokens.next()
+unary(tokens)
+Not(node)
+transPower(tokens)
+wrap(fun1, fun2, tokens, node)
+fun2(tokens)
+fun1(node, node2)
+mulDiv(tokens)
+dict()
+put(map, 'times', @(tokens, node)wrap(@Times, @unary, tokens, node))
+put(map, 'ldivide', @(tokens, node)wrap(@LDivide, @unary, tokens, node))
+put(map, 'rdivide', @(tokens, node)wrap(@RDivide, @unary, tokens, node))
+put(map, 'mtimes', @(tokens, node)wrap(@MTimes, @unary, tokens, node))
+put(map, 'mldivide', @(tokens, node)wrap(@MLDivide, @unary, tokens, node))
+put(map, 'mrdivide', @(tokens, node)wrap(@MRDivide, @unary, tokens, node))
+lookAhead(tokens, @unary, map)
+lookAhead(tokens, next, map)
+next(tokens)
+~isempty(tokens.get()) && isKey(map, tokens.get().type)
+map(tokens.get().type)
+tokens.next()
+fun(tokens, node)
+addSub(tokens)
+dict()
+put(map, 'plus', @(tokens, node)wrap(@Plus, @mulDiv, tokens, node))
+put(map, 'minus', @(tokens, node)wrap(@Minus, @mulDiv, tokens, node))
+lookAhead(tokens, @mulDiv, map)
+colonOperator(tokens)
+addSub(tokens)
+~isempty(tokens.get()) && strcmp(tokens.get().type, 'colon')
+tokens.next()
+addSub(tokens)
+~isempty(tokens.get()) && strcmp(tokens.get().type, 'colon')
+tokens.next()
+addSub(tokens)
+Colon(node, node2, node3)
+Colon(node, Expression.empty(), node2)
+compare(tokens)
+dict()
+put(map, 'le', @(tokens, node)wrap(@LE, @colonOperator, tokens, node))
+put(map, 'ge', @(tokens, node)wrap(@GE, @colonOperator, tokens, node))
+put(map, 'lt', @(tokens, node)wrap(@LT, @colonOperator, tokens, node))
+put(map, 'gt', @(tokens, node)wrap(@GT, @colonOperator, tokens, node))
+put(map, 'eq', @(tokens, node)wrap(@EQ, @colonOperator, tokens, node))
+put(map, 'ne', @(tokens, node)wrap(@NE, @colonOperator, tokens, node))
+lookAhead(tokens, @colonOperator, map)
+logicalAnd(tokens)
+dict()
+put(map, 'and', @(tokens, node)wrap(@And, @compare, tokens, node))
+lookAhead(tokens, @compare, map)
+logicalOr(tokens)
+dict()
+put(map, 'or', @(tokens, node)wrap(@Or, @logicalAnd, tokens, node))
+lookAhead(tokens, @logicalAnd, map)
+expression(tokens)
+logicalOr(tokens)
+modifier(tokens)
+~strcmp(tokens.get().type, 'identifier')
+error('unexpected token')
+Identifier(tokens.get().token)
+tokens.next()
+strcmp(tokens.get().type, 'assign')
+tokens.next()
+rvalue
+Identifier(tokens.get().token)
+tokens.next()
+Identifier.empty()
+Modifier(lvalue, rvalue)
+statement(tokens)
+tokens.get().type
+{'newline', 'semi'}
+error('unexpected token')
+'keyword'
+tokens.get().token
+tokens.next()
+''
+ismember(keyword, {'properties', 'classdef', 'methods'}) && strcmp(tokens.get().type, 'lparen')
+tokens.next()
+List()
+~strcmp(tokens.get().type, 'rparen')
+modifier(tokens, i)
+modifiers.append(mod)
+strcmp(tokens.get().type, 'comma')
+tokens.next()
+tokens.next()
+modifiers.toList(Modifier.empty())
+Modifier.empty()
+~isempty(tokens.get()) && ~(strcmp(tokens.get().type, 'comment') || strcmp(tokens.get().type, 'newline'))
+expression(tokens)
+~isempty(tokens.get()) && strcmp(tokens.get().type, 'assign')
+tokens.next()
+rvalue
+expression(tokens)
+Expression.empty()
+~isempty(tokens.get()) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'comma'))
+tokens.next()
+Expression.empty()
+Expression.empty()
+~isempty(tokens.get()) && strcmp(tokens.get().type, 'comment')
+tokens.get().token
+tokens.next()
+[]
+Statement(keyword, modifiers, lvalue, rvalue, comment)
+~isempty(tokens.get()) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'comma') || strcmp(tokens.get().type, 'newline'))
+tokens.next()
+variableDeclare(tokens)
+~strcmp(tokens.get().type, 'identifier')
+error('unexpected token')
+tokens.get().token
+tokens.next()
+strcmp(tokens.get().type, 'identifier')
+tokens.get().token
+tokens.next()
+''
+strcmp(tokens.get().type, 'assign')
+tokens.next()
+expression(tokens)
+Expression.empty()
+~isempty(tokens.get()) && strcmp(tokens.get().type, 'comment')
+tokens.get().token
+tokens.next()
+[]
+Variable(name, type, expr, comment)
+~isempty(tokens.get()) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline'))
+tokens.next()
+program(tokens)
+List()
+~isempty(tokens.get())
+strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline')
+tokens.next()
+block(tokens)
+blocks.append(blk)
+blocks.toList(Segment.empty())
+controlBlock(tokens, token, class_)
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, token))
+error(['expect ', token])
+statement(tokens)
+List()
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+block(tokens)
+args.append(arg)
+statement(tokens)
+class_(head, args.toList(Segment.empty()), end_)
+ifBlock(tokens)
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'if'))
+error('expect if')
+List()
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+statement(tokens)
+List()
+~(strcmp(tokens.get().type, 'keyword') && ismember(tokens.get().token, {'end', 'else', 'elseif'}))
+block(tokens)
+args.append(arg)
+branch.append(IfBranch(head, args.toList(Statement.empty())))
+statement(tokens)
+If(branch.toList(IfBranch.empty()), end_)
+switchBlock(tokens)
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'switch'))
+error('expect switch')
+statement(tokens)
+List()
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+statement(tokens)
+List()
+~(strcmp(tokens.get().type, 'keyword') && ismember(tokens.get().token, {'end', 'case', 'otherwise'}))
+block(tokens)
+args.append(arg)
+branch.append(SwitchCase(head, args.toList(Segment.empty())))
+statement(tokens)
+Switch(expr, branch.toList(SwitchCase.empty()), end_)
+propertiesBlock(tokens)
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'properties'))
+error('expect properties')
+statement(tokens)
+List()
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+variableDeclare(tokens)
+props.append(prop)
+statement(tokens)
+Properties(head, props.toList(Statement.empty()), end_)
+methodsBlock(tokens)
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'methods'))
+error('expect methods')
+statement(tokens)
+List()
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'function'))
+error('unexpected token')
+block(tokens)
+meth.append(fun)
+statement(tokens)
+Methods(head, meth.toList(Function.empty()), end_)
+classBlock(tokens)
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'classdef'))
+error('expect classdef')
+statement(tokens)
+List()
+List()
+~(strcmp(tokens.get().type, 'keyword') && strcmp(tokens.get().token, 'end'))
+~strcmp(tokens.get().type, 'keyword')
+error('unexpected token')
+tokens.get().token
+'properties'
+propertiesBlock(tokens)
+property.append(prop)
+'methods'
+methodsBlock(tokens)
+method.append(meth)
+error('unexpected keyword')
+property.toList(Properties.empty())
+method.toList(Methods.empty())
+statement(tokens)
+ClassDef(head, property, method, end_)
+block(tokens)
+~strcmp(tokens.get().type, 'keyword')
+statement(tokens)
+tokens.get().token
+{'return', 'continue', 'break'}
+statement(tokens)
+'for'
+controlBlock(tokens, 'for', @For)
+'while'
+controlBlock(tokens, 'while', @While)
+'function'
+controlBlock(tokens, 'function', @Function)
+'if'
+ifBlock(tokens)
+'switch'
+switchBlock(tokens)
+'classdef'
+classBlock(tokens)
+error('unexpected keyword')
+~isempty(tokens.get()) && (strcmp(tokens.get().type, 'semi') || strcmp(tokens.get().type, 'newline') || strcmp(tokens.get().type, 'comma'))
+tokens.next()
+output(filename, node)
+fopen(filename, 'wt+')
+outputNode(fid, 0, node)
+fclose(fid)
+outputNode(fid, indent, node)
+isempty(node)
+isList(node)
+1 : numel(node)
+outputNode(fid, indent, node(i))
+isa(node, 'Segment')
+outputSegment(fid, indent, node)
+isa(node, 'Expression')
+outputExpression(fid, indent, node)
+error('unexpected node')
+outputSegment(fid, indent, node)
+class(node)
+'Function'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.body)
+outputSegment(fid, indent, node.end_)
+'While'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.body)
+outputSegment(fid, indent, node.end_)
+'For'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.body)
+outputSegment(fid, indent, node.end_)
+'If'
+outputNode(fid, indent, node.body)
+outputSegment(fid, indent, node.end_)
+'IfBranch'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.body)
+'Switch'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.body)
+outputSegment(fid, indent, node.end_)
+'SwitchCase'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.body)
+'Statement'
+fprintf(fid, repmat(' ', 1, indent))
+~isempty(node.keyword)
+fprintf(fid, '%s', node.keyword)
+~isempty(node.rvalue)
+fprintf(fid, ' ')
+~isempty(node.modifier)
+fprintf(fid, '(')
+1 : numel(node.modifier)
+outputExpression(fid, indent, node.modifier(i))
+fprintf(fid, ')')
+~isempty(node.lvalue)
+outputExpression(fid, indent, node.lvalue)
+fprintf(fid, ' = ')
+~isempty(node.rvalue)
+outputExpression(fid, indent, node.rvalue)
+fopen('expr.txt', 'at')
+outputExpression(ffid, 0, node.rvalue)
+fprintf(ffid, '\n')
+fclose(ffid)
+isempty(node.keyword)
+fprintf(fid, ';')
+~isempty(node.comment)
+~isempty(node.keyword) || ~isempty(node.lvalue) || ~isempty(node.rvalue)
+fprintf(fid, ' ')
+fprintf(fid, '%s', node.comment)
+fprintf(fid, '\n')
+'ClassDef'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.property)
+outputNode(fid, indent + 4, node.method)
+outputSegment(fid, indent, node.end_)
+'Properties'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.prop)
+outputSegment(fid, indent, node.end_)
+'Methods'
+outputSegment(fid, indent, node.head)
+outputNode(fid, indent + 4, node.fun)
+outputSegment(fid, indent, node.end_)
+'Variable'
+fprintf(fid, repmat(' ', 1, indent))
+fprintf(fid, '%s', node.name)
+~isempty(node.type)
+fprintf(fid, ' %s', node.type)
+~isempty(node.default)
+fprintf(fid, ' = ')
+outputExpression(fid, indent, node.default)
+~isempty(node.comment)
+fprintf(fid, ' %s', node.comment)
+fprintf(fid, '\n')
+error('unexpected node')
+outputExpression(fid, indent, node)
+class(node)
+'Literal'
+fprintf(fid, '%s', node.value)
+'Identifier'
+fprintf(fid, '%s', node.identifier)
+'Field'
+outputExpression(fid, indent, node.value)
+fprintf(fid, '.')
+~isa(node.field, 'Identifier')
+fprintf(fid, '(')
+outputExpression(fid, indent, node.field)
+~isa(node.field, 'Identifier')
+fprintf(fid, ')')
+'Paren'
+fprintf(fid, '(')
+outputExpression(fid, indent, node.value)
+fprintf(fid, ')')
+'Not'
+fprintf(fid, '~')
+outputExpression(fid, indent, node.value)
+'Transpose'
+outputExpression(fid, indent, node.value)
+fprintf(fid, '.''')
+'Lambda'
+fprintf(fid, '@')
+~(isempty(node.args) && isa(node.expr, 'Identifier'))
+fprintf(fid, '(')
+1 : numel(node.args)
+outputExpression(fid, indent, node.args(i))
+i < numel(node.args)
+fprintf(fid, ', ')
+fprintf(fid, ')')
+outputExpression(fid, indent, node.expr)
+'Colon'
+isempty(node.begin) && isempty(node.step) && isempty(node.end_)
+fprintf(fid, ':')
+isempty(node.step)
+outputExpression(fid, indent, node.begin)
+fprintf(fid, ' : ')
+outputExpression(fid, indent, node.end_)
+outputExpression(fid, indent, node.begin)
+fprintf(fid, ' : ')
+outputExpression(fid, indent, node.step)
+fprintf(fid, ' : ')
+outputExpression(fid, indent, node.end_)
+'PIndex'
+outputExpression(fid, indent, node.value)
+fprintf(fid, '(')
+1 : numel(node.index)
+outputExpression(fid, indent, node.index(i))
+i < numel(node.index)
+fprintf(fid, ', ')
+fprintf(fid, ')')
+'BIndex'
+outputExpression(fid, indent, node.value)
+fprintf(fid, '{')
+1 : numel(node.index)
+outputExpression(fid, indent, node.index(i))
+i < numel(node.index)
+fprintf(fid, ', ')
+fprintf(fid, '}')
+'MatrixLine'
+1 : numel(node.item)
+outputExpression(fid, indent, node.item(i))
+i < numel(node.item)
+fprintf(fid, ', ')
+'Matrix'
+fprintf(fid, '[')
+numel(node.line) > 1
+fprintf(fid, '\n')
+fprintf(fid, '%s', repmat(' ', 1, indent + 4))
+1 : numel(node.line)
+outputExpression(fid, indent, node.line(i))
+numel(node.line) > 1
+fprintf(fid, '\n')
+fprintf(fid, '%s', repmat(' ', 1, indent + 4))
+fprintf(fid, ']')
+'Cell'
+fprintf(fid, '{')
+numel(node.line) > 1
+fprintf(fid, '\n')
+1 : numel(node.line)
+outputExpression(fid, indent, node.line(i))
+numel(node.line) > 1
+fprintf(fid, '\n')
+fprintf(fid, '}')
+'LT'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' < ')
+outputExpression(fid, indent, node.b)
+'GT'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' > ')
+outputExpression(fid, indent, node.b)
+'LE'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' <= ')
+outputExpression(fid, indent, node.b)
+'GE'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' >= ')
+outputExpression(fid, indent, node.b)
+'EQ'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' == ')
+outputExpression(fid, indent, node.b)
+'NE'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' ~= ')
+outputExpression(fid, indent, node.b)
+'Plus'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' + ')
+outputExpression(fid, indent, node.b)
+'Minus'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' - ')
+outputExpression(fid, indent, node.b)
+'And'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' && ')
+outputExpression(fid, indent, node.b)
+'Or'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' || ')
+outputExpression(fid, indent, node.b)
+'MTimes'
+outputExpression(fid, indent, node.a)
+fprintf(fid, ' * ')
+outputExpression(fid, indent, node.b)
+'Modifier'
+~isempty(node.lvalue)
+outputExpression(fid, indent, node.lvalue)
+fprintf(fid, '=')
+outputExpression(fid, indent, node.rvalue)
+'Dismiss'
+fprintf(fid, '~')
+error('unexpected node')
+List < handle
+append(self, item)
+self.count == numel(self.list)
+cell(1, self.count * 2)
+self.list
+li
+self.count + 1
+item
+toList(self, li)
+[li, self.list{1 : self.count}]
+m2py(filename, node)
+fopen(filename, 'at+')
+fprintf(fid, 'from mruntime import *\n')
+List()
+1 : numel(node)
+isa(node(i), 'Function')
+newNode.append(node(i))
+1 : numel(node)
+~isa(node(i), 'Function')
+newNode.append(node(i))
+newNode.toList(Segment.empty())
+outputNode(fid, 0, node, [], struct())
+fclose(fid)
+outputNode(fid, indent, node, retval, env)
+assert(nargin == 5)
+assert(nargout == 1)
+isempty(node)
+isList(node)
+1 : numel(node)
+outputNode(fid, indent, node(i), retval, env)
+isa(node, 'Segment')
+outputSegment(fid, indent, node, retval, env)
+isa(node, 'Expression')
+outputExpression(fid, indent, node)
+error('unexpected node')
+patchSwitch(fid, indent, value, body, retval, env)
+assert(nargin == 6)
+assert(nargout == 1)
+1 : numel(body)
+body(i).head.keyword
+'case'
+fprintf(fid, '%selif (', repmat(' ', 1, indent))
+outputExpression(fid, indent, value, env)
+isa(body(i).head.rvalue, 'Cell')
+fprintf(fid, ') in ')
+fprintf(fid, ') == ')
+outputExpression(fid, indent, body(i).head.rvalue, env)
+fprintf(fid, ':\n')
+patchSwitchBody(fid, indent + 4, body(i).body, retval, env)
+'otherwise'
+fprintf(fid, '%selse:\n', repmat(' ', 1, indent))
+patchSwitchBody(fid, indent + 4, body(i).body, retval, env)
+error('unexpected token')
+patchSwitchBody(fid, indent, body, retval, env)
+assert(nargin == 5)
+assert(nargout == 1)
+isempty(body)
+fprintf(fid, '%spass\n', repmat(' ', 1, indent))
+outputNode(fid, indent, body, retval, env)
+patchAssign(env, node)
+assert(nargin == 2)
+assert(nargout == 1)
+isempty(node)
+isList(node)
+1 : numel(node)
+patchAssign(env, node(i))
+class(node)
+'Statement'
+patchAssign(env, node.lvalue)
+'Matrix'
+patchAssign(env, node.line)
+'MatrixLine'
+patchAssign(env, node.item)
+{'Field', 'PIndex', 'BIndex'}
+patchAssign(env, node.value)
+'Identifier'
+'identifier'
+'Dismiss'
+error('unexpected node')
+endLambda(node)
+isempty(node)
+false
+isList(node)
+1 : numel(node)
+endLambda(node(i))
+true
+false
+class(node)
+'Literal'
+false
+'Identifier'
+strcmp(node.identifier, 'end')
+'Colon'
+endLambda(node.begin) || endLambda(node.end_) || endLambda(node.step)
+{'Plus', 'Minus'}
+endLambda(node.a) || endLambda(node.b)
+'Not'
+endLambda(node.value)
+{'PIndex', 'Field'}
+false
+'Matrix'
+endLambda(node.line)
+'MatrixLine'
+endLambda(node.item)
+error('unexpected token')
+outputSegment(fid, indent, node, retval, env)
+assert(nargin == 5)
+assert(nargout == 1)
+class(node)
+'Function'
+struct()
+fprintf(fid, '%sdef ', repmat(' ', 1, indent))
+outputExpression(fid, indent, node.head.rvalue.value, env)
+fprintf(fid, '(')
+1 : numel(node.head.rvalue.index)
+outputExpression(fid, indent, node.head.rvalue.index(i), env)
+patchAssign(newEnv, node.head.rvalue.index(i))
+i < numel(node.head.rvalue.index)
+fprintf(fid, ', ')
+fprintf(fid, '): # retval: ')
+node.head.lvalue
+isempty(retval)
+outputExpression(fid, indent, Matrix(MatrixLine.empty()), env)
+outputExpression(fid, indent, retval, env)
+fprintf(fid, '\n%snargin = %s\n', repmat(' ', 1, indent + 4), num2str(numel(node.head.rvalue.index)))
+~isempty(node.head.lvalue)
+isa(node.head.lvalue, 'Identifier')
+fprintf(fid, '%snargout = 1\n', repmat(' ', 1, indent + 4))
+fprintf(fid, '%snargout = %s\n', repmat(' ', 1, indent + 4), num2str(numel(node.head.lvalue.line(1).item)))
+outputNode(fid, indent + 4, node.body, retval, newEnv)
+fprintf(fid, '%sreturn', repmat(' ', 1, indent + 4))
+~isempty(retval)
+fprintf(fid, ' ')
+outputExpression(fid, indent, retval, newEnv)
+fprintf(fid, '\n')
+'While'
+outputSegment(fid, indent, node.head, retval, env)
+outputNode(fid, indent + 4, node.body, retval, env)
+'For'
+fprintf(fid, '%sfor ', repmat(' ', 1, indent))
+outputExpression(fid, indent, node.head.lvalue, env)
+fprintf(fid, ' in ')
+outputExpression(fid, indent, node.head.rvalue, env)
+fprintf(fid, ':\n')
+outputNode(fid, indent + 4, node.body, retval, env)
+'If'
+outputNode(fid, indent, node.body, retval, env)
+'IfBranch'
+outputSegment(fid, indent, node.head, retval, env)
+outputNode(fid, indent + 4, node.body, retval, env)
+isempty(node.body)
+fprintf(fid, '%spass\n', repmat(' ', 1, indent + 4))
+'Switch'
+node.head.rvalue
+fprintf(fid, '%sif False and ', repmat(' ', 1, indent))
+outputExpression(fid, indent, value, env)
+fprintf(fid, ':\n%spass\n', repmat(' ', 1, indent + 4))
+patchSwitch(fid, indent, value, node.body, retval, env)
+'Statement'
+fprintf(fid, repmat(' ', 1, indent))
+~isempty(node.keyword)
+strcmp(node.keyword, 'elseif')
+fprintf(fid, 'elif')
+fprintf(fid, '%s', node.keyword)
+~isempty(node.rvalue)
+fprintf(fid, ' ')
+~isempty(node.modifier)
+fprintf(fid, '(')
+1 : numel(node.modifier)
+outputExpression(fid, indent, node.modifier(i), env)
+fprintf(fid, ')')
+strcmp(node.keyword, 'return') && ~isempty(retval)
+fprintf(fid, ' ')
+outputExpression(fid, indent, retval, env)
+~isempty(node.lvalue)
+outputExpression(fid, indent, node.lvalue, env)
+fprintf(fid, ' = ')
+~isempty(node.rvalue)
+outputExpression(fid, indent, node.rvalue, env)
+ismember(node.keyword, {'if', 'elseif', 'else', 'while', 'for'})
+fprintf(fid, ':')
+~isempty(node.comment)
+~isempty(node.keyword) || ~isempty(node.lvalue) || ~isempty(node.rvalue)
+fprintf(fid, ' ')
+fprintf(fid, '#%s', node.comment(2 : end))
+fprintf(fid, '\n')
+patchAssign(env, node)
+'ClassDef'
+isa(node.head.rvalue, 'LT') && isa(node.head.rvalue.b, 'Identifier')
+fprintf(fid, 'from test_m.py.nodes.')
+outputExpression(fid, indent, node.head.rvalue.b, env)
+fprintf(fid, ' import ')
+outputExpression(fid, indent, node.head.rvalue.b, env)
+fprintf(fid, '\n')
+fprintf(fid, '%sclass ', repmat(' ', 1, indent))
+isa(node.head.rvalue, 'LT')
+outputExpression(fid, indent, node.head.rvalue.a, env)
+isa(node.head.rvalue.b, 'Identifier')
+fprintf(fid, '(')
+outputExpression(fid, indent, node.head.rvalue.b, env)
+fprintf(fid, ')')
+node.head.rvalue.a.identifier
+outputExpression(fid, indent, node.head.rvalue, env)
+node.head.rvalue.identifier
+fprintf(fid, ':\n')
+1 : numel(node.method)
+1 : numel(node.method(k).fun)
+fprintf(fid, '%sdef ', repmat(' ', 1, indent + 4))
+node.method(k).fun(i).head.rvalue.value.identifier
+strcmp(className, funName)
+fprintf(fid, '%s', '__init__')
+fprintf(fid, '%s', funName)
+fprintf(fid, '(self, *nargin): # retval: ')
+node.method(k).fun(i).head.lvalue
+isempty(retval)
+outputExpression(fid, indent + 4, Matrix(MatrixLine.empty()), env)
+outputExpression(fid, indent + 4, retval, env)
+fprintf(fid, '\n')
+fprintf(fid, '%s[', repmat(' ', 1, indent + 8))
+1 : numel(node.method(k).fun(i).head.rvalue.index)
+outputExpression(fid, indent + 4, node.method(k).fun(i).head.rvalue.index(j), env)
+j < numel(node.method(k).fun(i).head.rvalue.index)
+fprintf(fid, ', ')
+fprintf(fid, '] = nargin\n%snargin = len(nargin)\n', repmat(' ', 1, indent + 8))
+outputNode(fid, indent + 8, node.method(k).fun(i).body, retval, env)
+~strcmp(className, funName)
+fprintf(fid, '%sreturn', repmat(' ', 1, indent + 8))
+~isempty(retval)
+fprintf(fid, ' ')
+outputExpression(fid, indent + 4, retval, env)
+fprintf(fid, '\n')
+fprintf(fid, '%s@staticmethod\n', repmat(' ', 1, indent + 4))
+fprintf(fid, '%sdef empty():\n', repmat(' ', 1, indent + 4))
+fprintf(fid, '%sreturn []\n', repmat(' ', 1, indent + 8))
+'Properties'
+outputSegment(fid, indent, node.head, retval, env)
+outputNode(fid, indent + 4, node.prop, retval, env)
+outputSegment(fid, indent, node.end_, retval, env)
+'Methods'
+outputSegment(fid, indent, node.head, retval, env)
+outputNode(fid, indent + 4, node.fun, retval, env)
+outputSegment(fid, indent, node.end_, retval, env)
+'Variable'
+fprintf(fid, repmat(' ', 1, indent))
+fprintf(fid, '%s', node.name)
+~isempty(node.type)
+fprintf(fid, ' %s', node.type)
+~isempty(node.default)
+fprintf(fid, ' = ')
+outputExpression(fid, indent, node.default, env)
+~isempty(node.comment)
+fprintf(fid, ' %s', node.comment)
+fprintf(fid, '\n')
+error('unexpected node')
+outputExpression(fid, indent, node, env)
+assert(nargin == 4)
+class(node)
+'Literal'
+startsWith(node.value, '''')
+fprintf(fid, '''%s''', replace(replace(node.value(2 : end - 1), '\', '\\'), '''''', '\'''))
+startsWith(node.value, '"')
+fprintf(fid, '''%s''', replace(replace(node.value(2 : end - 1), '\', '\\'), '""', '\"'))
+fprintf(fid, '%s', node.value)
+'Identifier'
+fprintf(fid, '%s', node.identifier)
+'Field'
+outputExpression(fid, indent, node.value, env)
+isa(node.field, 'Identifier')
+fprintf(fid, '.')
+outputExpression(fid, indent, node.field, env)
+fprintf(fid, '[')
+outputExpression(fid, indent, node.field, env)
+fprintf(fid, ']')
+'Paren'
+fprintf(fid, '(')
+outputExpression(fid, indent, node.value, env)
+fprintf(fid, ')')
+'Not'
+fprintf(fid, 'not ')
+outputExpression(fid, indent, node.value, env)
+'Transpose'
+fprintf(fid, 'tr(')
+outputExpression(fid, indent, node.value, env)
+fprintf(fid, ')')
+'Lambda'
+fprintf(fid, 'lambda ')
+~(isempty(node.args) && isa(node.expr, 'Identifier'))
+1 : numel(node.args)
+outputExpression(fid, indent, node.args(i), env)
+i < numel(node.args)
+fprintf(fid, ', ')
+fprintf(fid, '*args')
+fprintf(fid, ': ')
+outputExpression(fid, indent, node.expr, env)
+isempty(node.args) && isa(node.expr, 'Identifier')
+fprintf(fid, '(*args)')
+'Colon'
+isempty(node.begin) && isempty(node.step) && isempty(node.end_)
+fprintf(fid, 'colon(None, None, None)')
+isempty(node.step)
+fprintf(fid, 'colon(')
+outputExpression(fid, indent, node.begin, env)
+fprintf(fid, ', ')
+outputExpression(fid, indent, node.end_, env)
+fprintf(fid, ')')
+fprintf(fid, 'colon(')
+outputExpression(fid, indent, node.begin, env)
+fprintf(fid, ', ')
+outputExpression(fid, indent, node.step, env)
+fprintf(fid, ', ')
+outputExpression(fid, indent, node.end_, env)
+fprintf(fid, ')')
+'PIndex'
+isa(node.value, 'Identifier') && ~(isfield(env, node.value.identifier) && strcmp(env.(node.value.identifier), 'identifier'))
+isa(node.value, 'Identifier') && strcmp(node.value.identifier, 'class')
+fprintf(fid, 'type')
+outputExpression(fid, indent, node.value, env)
+fprintf(fid, '(')
+1 : numel(node.index)
+outputExpression(fid, indent, node.index(i), env)
+i < numel(node.index)
+fprintf(fid, ', ')
+fprintf(fid, ')')
+endLambda(node.index)
+fprintf(fid, 'mparenl(')
+outputExpression(fid, indent, node.value, env)
+~isempty(node.index)
+fprintf(fid, ', lambda end: (')
+1 : numel(node.index)
+outputExpression(fid, indent, node.index(i), env)
+i < numel(node.index)
+fprintf(fid, ', ')
+numel(node.index) == 1
+fprintf(fid, ',')
+fprintf(fid, ')')
+fprintf(fid, ')')
+fprintf(fid, 'mparen(')
+outputExpression(fid, indent, node.value, env)
+~isempty(node.index)
+fprintf(fid, ', ')
+1 : numel(node.index)
+outputExpression(fid, indent, node.index(i), env)
+i < numel(node.index)
+fprintf(fid, ', ')
+fprintf(fid, ')')
+isa(node.value, 'Identifier') && strcmp(node.value.identifier, 'class')
+fprintf(fid, '.__name__')
+'BIndex'
+outputExpression(fid, indent, node.value, env)
+1 : numel(node.index)
+fprintf(fid, '[(')
+outputExpression(fid, indent, node.index(i), env)
+fprintf(fid, ')-1]')
+'MatrixLine'
+1 : numel(node.item)
+outputExpression(fid, indent, node.item(i), env)
+i < numel(node.item)
+fprintf(fid, ', ')
+'Matrix'
+fprintf(fid, '[')
+numel(node.line) > 1
+fprintf(fid, '\n')
+fprintf(fid, '%s', repmat(' ', 1, indent + 4))
+1 : numel(node.line)
+outputExpression(fid, indent, node.line(i), env)
+numel(node.line) > 1
+fprintf(fid, ',\n')
+fprintf(fid, '%s', repmat(' ', 1, indent + 4))
+fprintf(fid, ']')
+'Cell'
+fprintf(fid, '[')
+numel(node.line) > 1
+fprintf(fid, '\n')
+1 : numel(node.line)
+outputExpression(fid, indent, node.line(i), env)
+numel(node.line) > 1
+fprintf(fid, '\n')
+fprintf(fid, ']')
+'LT'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' < ')
+outputExpression(fid, indent, node.b, env)
+'GT'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' > ')
+outputExpression(fid, indent, node.b, env)
+'LE'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' <= ')
+outputExpression(fid, indent, node.b, env)
+'GE'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' >= ')
+outputExpression(fid, indent, node.b, env)
+'EQ'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' == ')
+outputExpression(fid, indent, node.b, env)
+'NE'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' != ')
+outputExpression(fid, indent, node.b, env)
+'Plus'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' + ')
+outputExpression(fid, indent, node.b, env)
+'Minus'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' - ')
+outputExpression(fid, indent, node.b, env)
+'And'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' and ')
+outputExpression(fid, indent, node.b, env)
+'Or'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' or ')
+outputExpression(fid, indent, node.b, env)
+'MTimes'
+outputExpression(fid, indent, node.a, env)
+fprintf(fid, ' * ')
+outputExpression(fid, indent, node.b, env)
+'Modifier'
+~isempty(node.lvalue)
+outputExpression(fid, indent, node.lvalue, env)
+fprintf(fid, '=')
+outputExpression(fid, indent, node.rvalue, env)
+'Dismiss'
+fprintf(fid, '_')
+error('unexpected node')

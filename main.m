@@ -39,6 +39,9 @@ if isfolder(pydir + "/nodes")
     rmdir(pydir + "/nodes", 's');
 end
 mkdir(pydir + "/nodes");
+if isfile('expr.txt')
+    delete('expr.txt');
+end
 fid = fopen(pydir + "/main.py", 'wt+');
 files = dir('mcst');
 for i = 1 : numel(files)
@@ -79,72 +82,6 @@ node = parseFile('m2py.m', table);
 output(testdir + "/m2py.m", node);
 m2py(pydir + "/m2py.py", node);
 compareFile('m2py.m', testdir + "/m2py.m");
-%
-% fieldExpr           -> 'identifier'
-%                      | '(' expression ')'
-% field               -> '.' fieldExpr
-% pindex              -> '(' commaSeparatedExpr ')'
-% bindex              -> '{' commaSeparatedExpr '}'
-% subsref             -> field subsref
-%                      | pindex subsref
-%                      | bindex subsref
-%                      | ''
-% operand             -> 'identifier' subsref
-%                      | 'literal'
-%                      | '(' expression ')'
-% powerTrans2         -> '.''' powerTrans2
-%                      | '.^' operand powerTrans2
-%                      | '''' powerTrans2
-%                      | '^' operand powerTrans2
-%                      | ''
-% powerTrans          -> operand powerTrans2
-% unary               -> '+' unary
-%                      | '-' unary
-%                      | '~' unary
-%                      | powerTrans
-% mulDiv2             -> '.*' unary mulDiv2
-%                      | './' unary mulDiv2
-%                      | '.\' unary mulDiv2
-%                      | '*' unary mulDiv2
-%                      | '/' unary mulDiv2
-%                      | '\' unary mulDiv2
-%                      | ''
-% mulDiv              -> unary mulDiv2
-% addSub2             -> '+' mulDiv addSub2
-%                      | '-' mulDiv addSub2
-%                      | ''
-% addSub              -> mulDiv addSub2
-% colon3              -> ':' addSub
-%                      | ''
-% colon2              -> ':' addSub colon3
-%                      | ''
-% colon               -> addSub colon2
-% compare2            -> '<' colon compare2
-%                      | '<=' colon compare2
-%                      | '>' colon compare2
-%                      | '>=' colon compare2
-%                      | '==' colon compare2
-%                      | '~=' colon compare2
-%                      | ''
-% compare             -> colon compare2
-% elemAnd2            -> '&' compare elemAnd2
-%                      | ''
-% elemAnd             -> compare elemAnd2
-% elemOr2             -> '|' elemAnd elemOr2
-%                      | ''
-% elemOr              -> elemAnd elemOr2
-% logiAnd2            -> '&&' elemOr logiAnd2
-%                      | ''
-% logiAnd             -> elemOr logiAnd2
-% logiOr2             -> '||' logiAnd logiOr2
-%                      | ''
-% logiOr              -> logiAnd logiOr2
-% expression          -> logiOr
-% commaSeparatedExpr2 -> ',' expression
-%                      | ''
-% commaSeparatedExpr  -> expression commaSeparatedExpr2
-% entry               -> expression #
-% 
 function compareFile(file1, file2)
     content1 = readFile(file1);
     content2 = readFile(file2);

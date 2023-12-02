@@ -65,6 +65,10 @@ function outputSegment(fid, indent, node)
             end
             if ~isempty(node.rvalue)
                 outputExpression(fid, indent, node.rvalue);
+                ffid = fopen('expr.txt', 'at');
+                outputExpression(ffid, 0, node.rvalue);
+                fprintf(ffid, '\n');
+                fclose(ffid);
                 if isempty(node.keyword)
                     fprintf(fid, ';');
                 end

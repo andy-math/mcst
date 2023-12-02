@@ -64,6 +64,10 @@ def outputSegment(fid, indent, node): # retval: []
             fprintf(fid, ' = ')
         if not isempty(node.rvalue):
             outputExpression(fid, indent, node.rvalue)
+            ffid = fopen('expr.txt', 'at')
+            outputExpression(ffid, 0, node.rvalue)
+            fprintf(ffid, '\\n')
+            fclose(ffid)
             if isempty(node.keyword):
                 fprintf(fid, ';')
         if not isempty(node.comment):
