@@ -167,7 +167,7 @@ function content = readFile(filename)
     end
 end
 function node = parse(tokens,term,grammar,first,follow)
-    if ismember(tokens.get().type,{'identifier','newline','chars','string','number','eof'})
+    if any(strcmp(tokens.get().type,{'identifier','newline','chars','string','number','eof'}))
         sym = tokens.get().type;
     else
         sym = tokens.get().token;
