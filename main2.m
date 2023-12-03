@@ -159,7 +159,7 @@ grammar = preprocess(grammar,first,follow);
 content = readFile('expr.txt');
 tokens = tokenize(content);
 tic
-parse(tokens,grammar,'code');
+parse(tokens,grammar,'code',1);
 toc
 function content = readFile(filename)
     fid = fopen(filename);
@@ -169,9 +169,9 @@ function content = readFile(filename)
         content = replace(content, sprintf('\r\n'), newline);
     end
 end
-function parse(tokens,grammar,term)
+function i = parse(tokens,grammar,term,i)
     term = grammar.(term);
-    token = tokens.get();
+    token = tokens{i};
     index = find(strcmp(token.sym,term.first));
     if isempty(index)
         error('unexpected token');
@@ -180,11 +180,11 @@ function parse(tokens,grammar,term)
     term = term.grammar{index};
     for j = 1:numel(term)
         if isfield(grammar,term{j})
-            parse(tokens,grammar,term{j});
+            i = parse(tokens,grammar,term{j},i);
         else
-            token = tokens.get();
+            token = tokens{i};
             if strcmp(token.sym,term{j})
-                tokens.next();
+                i = i+1;
             else
                 error('unexpected token');
             end
@@ -192,39 +192,39 @@ function parse(tokens,grammar,term)
     end
 end
 function tokens = tokenize(s)
-    table = [
-        {'and', '&&'}
-        {'or', '||'}
-        {'times', '.*'}
-        {'rdivide', './'}
-        {'ldivide', '.\'}
-        {'transpose', '.'''}
-        {'eq', '=='}
-        {'ne', '~='}
-        {'le', '<='}
-        {'ge', '>='}
-        {'lparen', '('}
-        {'rparen', ')'}
-        {'lsquare', '['}
-        {'rsquare', ']'}
-        {'lbrace', '{'}
-        {'rbrace', '}'}
-        {'semi', ';'}
-        {'colon', ':'}
-        {'comma', ','}
-        {'plus', '+'}
-        {'minus', '-'}
-        {'mtimes', '*'}
-        {'mrdivide', '/'}
-        {'mldivide', '\'}
-        {'lt', '<'}
-        {'gt', '>'}
-        {'assign', '='}
-        {'not', '~'}
-        {'field', '.'}
-        {'lambda', '@'}
-        {'newline', newline}
-        ];
+    table = {
+        '&&'
+        '||'
+        '.*'
+        './'
+        '.\'
+        '.'''
+        '=='
+        '~='
+        '<='
+        '>='
+        '('
+        ')'
+        '['
+        ']'
+        '{'
+        '}'
+        ';'
+        ':'
+        ','
+        '+'
+        '-'
+        '*'
+        '/'
+        '\'
+        '<'
+        '>'
+        '='
+        '~'
+        '.'
+        '@'
+        newline
+        };
     j = 1;
     tokens = List();
     count = 0;
@@ -236,18 +236,18 @@ function tokens = tokenize(s)
         lastToken = type;
     end
     tokens.append(Token('eof','eof','eof'));
-    tokens = TokenList(tokens.toList([]));
+    tokens = tokens.list;
 end
 function [j, type, token, sym] = nextToken(s, j, table, lastToken)
     while j <= numel(s) && s(j) == ' '
         j = j + 1;
     end
-    for i = 1 : size(table, 1)
-        if j + numel(table{i, 2}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i, 2}) - 1), table{i, 2})
-            type = table{i, 1};
-            token = table{i, 2};
-            sym = table{i, 2};
-            j = j + numel(table{i, 2});
+    for i = 1 : numel(table)
+        if j + numel(table{i}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i}) - 1), table{i})
+            type = table{i};
+            token = table{i};
+            sym = table{i};
+            j = j + numel(table{i});
             return
         end
     end
@@ -418,16 +418,25 @@ function first = getFirst(first,term,grammar)
 end
 function print(term,grammar,first,follow)
     assert(numel(grammar) == numel(first));
-    if isempty(follow)
-        disp(term+":");
-    else
-        disp(term+": "+string(follow).join(' '));
-    end
+    eps = false;
+    disp(term+": ");
     for i = 1:numel(grammar)
-        str = repmat(' ',1,4)+string(grammar{i}).join(' ');
+        if ~isempty(grammar{i})
+            str = repmat(' ',1,4)+string(grammar{i}).join(' ');
+        else
+            str = repmat(' ',1,4)+"{}";
+            eps = true;
+        end
         str = str.pad(40);
-        str = str+string(first{i}).join(' ');
-        disp(str);
+        first_ = first{i};
+        str = str+string(first_).join(' ');
+        disp(str.replace(newline,'newline'));
+    end
+    if ~eps
+        str = repmat(' ',1,4)+"`follow`";
+        str = str.pad(40);
+        str = str+string(follow).join(' ');
+        disp(str.replace(newline,'newline'));
     end
 end
 
