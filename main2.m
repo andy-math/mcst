@@ -170,24 +170,41 @@ function content = readFile(filename)
     end
 end
 function i = parse(tokens,grammar,term,i)
-    term = grammar.(term);
-    token = tokens{i};
-    index = find(strcmp(token.sym,term.first));
-    if isempty(index)
-        error('unexpected token');
-    end
-    index = term.index(index);
-    term = term.grammar{index};
-    for j = 1:numel(term)
-        if isfield(grammar,term{j})
-            i = parse(tokens,grammar,term{j},i);
-        else
+    stack = cell(size(tokens));
+    stack{1} = {term,1};
+    count = 1;
+    while count > 0
+        term = stack{count}{1};
+        j = stack{count}{2};
+        if isa(term,'char')
+            term = grammar.(term);
             token = tokens{i};
-            if strcmp(token.sym,term{j})
-                i = i+1;
-            else
+            index = find(strcmp(token.sym,term.first));
+            if isempty(index)
                 error('unexpected token');
             end
+            index = term.index(index);
+            term = term.grammar{index};
+            stack{count}{1} = term;
+        end
+        while j <= numel(term)
+            if isfield(grammar,term{j})
+                stack{count}{2} = j+1;
+                count = count+1;
+                stack{count} = {term{j}, 1};
+                break
+            else
+                token = tokens{i};
+                if strcmp(token.sym,term{j})
+                    i = i+1;
+                    j = j+1;
+                else
+                    error('unexpected token');
+                end
+            end
+        end
+        if j > numel(term)
+            count = count-1;
         end
     end
 end
