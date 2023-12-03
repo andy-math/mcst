@@ -155,9 +155,10 @@ for i = 1:numel(terms)
     end
     print(terms{i},grammar.(terms{i}),first.(terms{i}),follow.(terms{i}));
 end
+grammar = preprocess(grammar,first,follow);
 content = readFile('expr.txt');
 tokens = tokenize(content);
-parse(tokens,'code',grammar,first,follow)
+parse(tokens,grammar,'code');
 function content = readFile(filename)
     fid = fopen(filename);
     content = native2unicode(fread(fid).');
@@ -166,29 +167,26 @@ function content = readFile(filename)
         content = replace(content, sprintf('\r\n'), newline);
     end
 end
-function node = parse(tokens,term,grammar,first,follow)
-    if any(strcmp('',[first.(term){:}])) && ismember(tokens.get().sym,follow.(term))
-        node = [];
-        return
+function parse(tokens,grammar,term)
+    term = grammar.(term);
+    index = find(strcmp(tokens.get().sym,term.first));
+    if isempty(index)
+        error('unexpected token');
     end
-    for i = 1:numel(grammar.(term))
-        if ismember(tokens.get().sym,first.(term){i})
-            for j = 1:numel(grammar.(term){i})
-                if isfield(grammar,grammar.(term){i}{j})
-                    parse(tokens,grammar.(term){i}{j},grammar,first,follow);
-                else
-                    if strcmp(tokens.get().sym,grammar.(term){i}{j})
-                        fprintf('%s',tokens.get().token);
-                        tokens.next();
-                    else
-                        error('unexpected token');
-                    end
-                end
+    index = term.index(index);
+    term = term.grammar{index};
+    for j = 1:numel(term)
+        if isfield(grammar,term{j})
+            parse(tokens,grammar,term{j});
+        else
+            if strcmp(tokens.get().sym,term{j})
+                fprintf('%s',tokens.get().token);
+                tokens.next();
+            else
+                error('unexpected token');
             end
-            return
         end
     end
-    error('unexpected token');
 end
 function tokens = tokenize(s)
     table = [
@@ -323,16 +321,18 @@ function [j, type, token, sym] = nextToken(s, j, table, lastToken)
     error('unknown token');
 end
 function follow = getFollow(follow,term,grammar,first)
-    for i = 1:numel(grammar.(term))
+    generatorList = grammar.(term);
+    for i = 1:numel(generatorList)
         last = follow.(term);
-        for j = numel(grammar.(term){i}):-1:1
-            if isfield(grammar,grammar.(term){i}{j})
-                vis = ismember(last,follow.(grammar.(term){i}{j}));
+        generator = generatorList{i};
+        for j = numel(generator):-1:1
+            if isfield(grammar,generator{j})
+                vis = ismember(last,follow.(generator{j}));
                 if ~all(vis)
-                    follow.(grammar.(term){i}{j}) = [follow.(grammar.(term){i}{j}), last(~vis)];
-                    follow = getFollow(follow,grammar.(term){i}{j},grammar,first);
+                    follow.(grammar.(term){i}{j}) = [follow.(generator{j}), last(~vis)];
+                    follow = getFollow(follow,generator{j},grammar,first);
                 end
-                f = [first.(grammar.(term){i}{j}){:}];
+                f = [first.(generator{j}){:}];
                 eps = strcmp(f,'');
                 if any(eps)
                     vis = ismember(f,last);
@@ -341,9 +341,28 @@ function follow = getFollow(follow,term,grammar,first)
                     last = f(~eps);
                 end
             else
-                last = {grammar.(term){i}{j}};
+                last = {generator{j}};
             end
         end
+    end
+end
+function grammar = preprocess(grammar,first,follow)
+    terms = fieldnames(grammar);
+    for i = 1:numel(terms)
+        term = terms{i};
+        first_ = first.(term);
+        empty = find(cellfun(@isempty,grammar.(term)));
+        assert(numel(empty) <= 1);
+        if ~isempty(empty)
+            first_{empty} = follow.(term);
+        end
+        assert(numel(unique([first_{:}])) == numel([first_{:}]));
+        index = arrayfun(@(i)repmat(i,size(first_{i})),1:numel(first_),'un',0);
+        grammar_ = grammar.(term);
+        grammar.(term) = struct();
+        grammar.(term).('grammar') = grammar_;
+        grammar.(term).('first') = [first_{:}];
+        grammar.(term).('index') = [index{:}];
     end
 end
 function first = getFirst(first,term,grammar)
@@ -354,9 +373,11 @@ function first = getFirst(first,term,grammar)
         return
     end
     first.(term) = {};
-    set = cell(1, numel(grammar.(term)));
-    for i = 1:numel(grammar.(term))
-        if isempty(grammar.(term){i})
+    generatorList = grammar.(term);
+    set = cell(1, numel(generatorList));
+    for i = 1:numel(generatorList)
+        generator = generatorList{i};
+        if isempty(generator)
             if ismember('',[set{:}])
                 error('term %s has duplicate first token', term);
             end
@@ -364,10 +385,10 @@ function first = getFirst(first,term,grammar)
             continue
         end
         set{i} = {};
-        for j = 1:numel(grammar.(term){i})
-            if isfield(grammar, grammar.(term){i}{j})
-                first = getFirst(first,grammar.(term){i}{j},grammar);
-                subset = [first.(grammar.(term){i}{j}){:}];
+        for j = 1:numel(generator)
+            if isfield(grammar, generator{j})
+                first = getFirst(first,generator{j},grammar);
+                subset = [first.(generator{j}){:}];
                 eps = strcmp(subset,'');
                 if any(ismember(subset(~eps),[set{:}]))
                     error('term %s has duplicate first token', term);
@@ -375,17 +396,17 @@ function first = getFirst(first,term,grammar)
                 set{i} = [set{i}, subset(~eps)];
                 if ~any(eps)
                     break
-                elseif j == numel(grammar.(term){i})
+                elseif j == numel(generator)
                     if ismember('',[set{:}])
                         error('term %s has duplicate first token', term);
                     end
                     set{i} = [set{i}, {''}];
                 end
             else
-                if ismember(grammar.(term){i}{j},[set{:}])
+                if ismember(generator{j},[set{:}])
                     error('term %s has duplicate first token', term);
                 end
-                set{i} = [set{i}, {grammar.(term){i}{j}}];
+                set{i} = [set{i}, {generator{j}}];
                 break
             end
         end
