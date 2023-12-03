@@ -1,39 +1,6 @@
 clc();
 clear();
 close('all');
-table = [
-    {'and', '&&'}
-    {'or', '||'}
-    {'times', '.*'}
-    {'rdivide', './'}
-    {'ldivide', '.\'}
-    {'transpose', '.'''}
-    {'eq', '=='}
-    {'ne', '~='}
-    {'le', '<='}
-    {'ge', '>='}
-    {'lparen', '('}
-    {'rparen', ')'}
-    {'lsquare', '['}
-    {'rsquare', ']'}
-    {'lbrace', '{'}
-    {'rbrace', '}'}
-    {'semi', ';'}
-    {'colon', ':'}
-    {'comma', ','}
-    {'plus', '+'}
-    {'minus', '-'}
-    {'mtimes', '*'}
-    {'mrdivide', '/'}
-    {'mldivide', '\'}
-    {'lt', '<'}
-    {'gt', '>'}
-    {'assign', '='}
-    {'not', '~'}
-    {'field', '.'}
-    {'lambda', '@'}
-    {'newline', newline}
-    ];
 [testdir, pydir] = configure();
 if isfolder(pydir + "/nodes")
     rmdir(pydir + "/nodes", 's');
@@ -46,7 +13,7 @@ fid = fopen(pydir + "/main.py", 'wt+');
 files = dir('mcst');
 for i = 1 : numel(files)
     if ~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
-        node = parseFile("mcst/" + files(i).name, table);
+        node = parseFile("mcst/" + files(i).name);
         output(testdir + "/" + files(i).name, node);
         m2py(pydir + "/nodes/" + files(i).name(1 : end - 2) + ".py", node);
         fprintf(fid, 'from test_m.py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2));
@@ -65,20 +32,20 @@ fprintf(fid, 'from test_m.py.nodes.Matrix import Matrix\n');
 fprintf(fid, 'from test_m.py.nodes.MatrixLine import MatrixLine\n');
 fclose(fid);
 %
-node = parseFile('main.m', table);
+node = parseFile('main.m');
 output(testdir + "/main.m", node);
 m2py(pydir + "/main.py", node);
 compareFile('main.m', testdir + "/main.m");
 %
-node = parseFile('output.m', table);
+node = parseFile('output.m');
 output(testdir + "/output.m", node);
 m2py(pydir + "/output.py", node);
 compareFile('output.m', testdir + "/output.m");
 %
-output(testdir + "/List.m", parseFile('List.m', table));
+output(testdir + "/List.m", parseFile('List.m'));
 compareFile('List.m', testdir + "/List.m");
 %
-node = parseFile('m2py.m', table);
+node = parseFile('m2py.m');
 output(testdir + "/m2py.m", node);
 m2py(pydir + "/m2py.py", node);
 compareFile('m2py.m', testdir + "/m2py.m");
@@ -106,24 +73,57 @@ function content = readFile(filename)
         content = replace(content, sprintf('\r\n'), newline);
     end
 end
-function node = parseFile(filename, table)
+function node = parseFile(filename)
     content = readFile(filename);
-    node = program(tokenize(content, table));
+    node = program(tokenize(content));
 end
-function tokens = tokenize(s, table)
+function tokens = tokenize(s)
+    table = [
+        {'and', '&&'}
+        {'or', '||'}
+        {'times', '.*'}
+        {'rdivide', './'}
+        {'ldivide', '.\'}
+        {'transpose', '.'''}
+        {'eq', '=='}
+        {'ne', '~='}
+        {'le', '<='}
+        {'ge', '>='}
+        {'lparen', '('}
+        {'rparen', ')'}
+        {'lsquare', '['}
+        {'rsquare', ']'}
+        {'lbrace', '{'}
+        {'rbrace', '}'}
+        {'semi', ';'}
+        {'colon', ':'}
+        {'comma', ','}
+        {'plus', '+'}
+        {'minus', '-'}
+        {'mtimes', '*'}
+        {'mrdivide', '/'}
+        {'mldivide', '\'}
+        {'lt', '<'}
+        {'gt', '>'}
+        {'assign', '='}
+        {'not', '~'}
+        {'field', '.'}
+        {'lambda', '@'}
+        {'newline', newline}
+        ];
     j = 1;
     tokens = List();
     count = 0;
     lastToken = '';
     while j < numel(s)
         count = count + 1;
-        [j, type, token] = nextToken(s, j, table, lastToken);
-        tokens.append(Token(type, token));
+        [j, type, token, sym] = nextToken(s, j, table, lastToken);
+        tokens.append(Token(type, token, sym));
         lastToken = type;
     end
     tokens = TokenList(tokens.toList([]));
 end
-function [j, type, token] = nextToken(s, j, table, lastToken)
+function [j, type, token, sym] = nextToken(s, j, table, lastToken)
     while j <= numel(s) && s(j) == ' '
         j = j + 1;
     end
@@ -131,6 +131,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         if j + numel(table{i, 2}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i, 2}) - 1), table{i, 2})
             type = table{i, 1};
             token = table{i, 2};
+            sym = table{i, 2};
             j = j + numel(table{i, 2});
             return
         end
@@ -139,6 +140,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         if strcmp(lastToken, 'identifier') || strcmp(lastToken, 'number')
             type = 'ctranspose';
             token = '''';
+            sym = '''';
             j = j + 1;
             return
         end
@@ -150,6 +152,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         j = j + 1;
         type = 'chars';
         token = s(i : j - 1);
+        sym = 'chars';
         return
     end
     if s(j) == '"'
@@ -161,6 +164,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         j = j + 1;
         type = 'string';
         token = s(i : j - 1);
+        sym = 'string';
         return
     end
     if ('a' <= s(j) && s(j) <= 'z') || ('A' <= s(j) && s(j) <= 'Z')
@@ -171,8 +175,10 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         token = s(i : j - 1);
         if ismember(token, {'return', 'break', 'continue', 'if', 'elseif', 'for', 'else', 'while', 'end', 'function', 'switch', 'case', 'otherwise', 'classdef', 'properties', 'methods'})
             type = 'keyword';
+            sym = token;
         else
             type = 'identifier';
+            sym = 'identifier';
         end
         return
     end
@@ -187,6 +193,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         end
         type = 'number';
         token = s(i : j - 1);
+        sym = 'number';
         return
     end
     if s(j) == '%'
@@ -196,6 +203,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         end
         type = 'comment';
         token = s(i : j - 1);
+        sym = 'comment';
         return
     end
     error('unknown token');

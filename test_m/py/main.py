@@ -72,43 +72,78 @@ def readFile(filename): # retval: content
     while contains(content, sprintf('\\r\\n')):
         content = replace(content, sprintf('\\r\\n'), newline)
     return content
-def parseFile(filename, table): # retval: node
-    nargin = 2
+def parseFile(filename): # retval: node
+    nargin = 1
     nargout = 1
     content = readFile(filename)
-    node = program(tokenize(content, table))
+    node = program(tokenize(content))
     return node
-def tokenize(s, table): # retval: tokens
-    nargin = 2
+def tokenize(s): # retval: tokens
+    nargin = 1
     nargout = 1
+    table = [
+        ['and', '&&'],
+        ['or', '||'],
+        ['times', '.*'],
+        ['rdivide', './'],
+        ['ldivide', '.\\'],
+        ['transpose', '.\''],
+        ['eq', '=='],
+        ['ne', '~='],
+        ['le', '<='],
+        ['ge', '>='],
+        ['lparen', '('],
+        ['rparen', ')'],
+        ['lsquare', '['],
+        ['rsquare', ']'],
+        ['lbrace', '{'],
+        ['rbrace', '}'],
+        ['semi', ';'],
+        ['colon', ':'],
+        ['comma', ','],
+        ['plus', '+'],
+        ['minus', '-'],
+        ['mtimes', '*'],
+        ['mrdivide', '/'],
+        ['mldivide', '\\'],
+        ['lt', '<'],
+        ['gt', '>'],
+        ['assign', '='],
+        ['not', '~'],
+        ['field', '.'],
+        ['lambda', '@'],
+        ['newline', newline],
+        ]
     j = 1
     tokens = List()
     count = 0
     lastToken = ''
     while j < numel(s):
         count = count + 1
-        [j, type, token] = nextToken(s, j, table, lastToken)
-        mparen(tokens.append, Token(type, token))
+        [j, type, token, sym] = nextToken(s, j, table, lastToken)
+        mparen(tokens.append, Token(type, token, sym))
         lastToken = type
     tokens = TokenList(mparen(tokens.toList, []))
     return tokens
-def nextToken(s, j, table, lastToken): # retval: [j, type, token]
+def nextToken(s, j, table, lastToken): # retval: [j, type, token, sym]
     nargin = 4
-    nargout = 3
+    nargout = 4
     while j <= numel(s) and mparen(s, j) == ' ':
         j = j + 1
     for i in colon(1, size(table, 1)):
         if j + numel(table[(i)-1][(2)-1]) - 1 <= numel(s) and strcmp(mparen(s, colon(j, j + numel(table[(i)-1][(2)-1]) - 1)), table[(i)-1][(2)-1]):
             type = table[(i)-1][(1)-1]
             token = table[(i)-1][(2)-1]
+            sym = table[(i)-1][(2)-1]
             j = j + numel(table[(i)-1][(2)-1])
-            return [j, type, token]
+            return [j, type, token, sym]
     if mparen(s, j) == '\'':
         if strcmp(lastToken, 'identifier') or strcmp(lastToken, 'number'):
             type = 'ctranspose'
             token = '\''
+            sym = '\''
             j = j + 1
-            return [j, type, token]
+            return [j, type, token, sym]
         i = j
         j = j + 1
         while j <= numel(s) and not (mparen(s, j) == '\'' and (j + 1 > numel(s) or mparen(s, j + 1) != '\'')):
@@ -116,7 +151,8 @@ def nextToken(s, j, table, lastToken): # retval: [j, type, token]
         j = j + 1
         type = 'chars'
         token = mparen(s, colon(i, j - 1))
-        return [j, type, token]
+        sym = 'chars'
+        return [j, type, token, sym]
     if mparen(s, j) == '"':
         i = j
         j = j + 1
@@ -125,7 +161,8 @@ def nextToken(s, j, table, lastToken): # retval: [j, type, token]
         j = j + 1
         type = 'string'
         token = mparen(s, colon(i, j - 1))
-        return [j, type, token]
+        sym = 'string'
+        return [j, type, token, sym]
     if ('a' <= mparen(s, j) and mparen(s, j) <= 'z') or ('A' <= mparen(s, j) and mparen(s, j) <= 'Z'):
         i = j
         while j <= numel(s) and (('a' <= mparen(s, j) and mparen(s, j) <= 'z') or ('A' <= mparen(s, j) and mparen(s, j) <= 'Z') or ('0' <= mparen(s, j) and mparen(s, j) <= '9') or mparen(s, j) == '_'):
@@ -133,9 +170,11 @@ def nextToken(s, j, table, lastToken): # retval: [j, type, token]
         token = mparen(s, colon(i, j - 1))
         if ismember(token, ['return', 'break', 'continue', 'if', 'elseif', 'for', 'else', 'while', 'end', 'function', 'switch', 'case', 'otherwise', 'classdef', 'properties', 'methods']):
             type = 'keyword'
+            sym = token
         else:
             type = 'identifier'
-        return [j, type, token]
+            sym = 'identifier'
+        return [j, type, token, sym]
     if ('0' <= mparen(s, j) and mparen(s, j) <= '9') or (mparen(s, j) == '.' and j + 1 <= numel(s) and '0' <= mparen(s, j + 1) and mparen(s, j + 1) <= '9'):
         # [int].[frac]e[sign][exp]
         i = j
@@ -146,16 +185,18 @@ def nextToken(s, j, table, lastToken): # retval: [j, type, token]
             j = j + 1
         type = 'number'
         token = mparen(s, colon(i, j - 1))
-        return [j, type, token]
+        sym = 'number'
+        return [j, type, token, sym]
     if mparen(s, j) == '%':
         i = j
         while j <= numel(s) and mparen(s, j) != newline:
             j = j + 1
         type = 'comment'
         token = mparen(s, colon(i, j - 1))
-        return [j, type, token]
+        sym = 'comment'
+        return [j, type, token, sym]
     error('unknown token')
-    return [j, type, token]
+    return [j, type, token, sym]
 def field(tokens): # retval: node
     nargin = 1
     nargout = 1
@@ -657,39 +698,6 @@ def block(tokens): # retval: node
 clc()
 clear()
 close('all')
-table = [
-    ['and', '&&'],
-    ['or', '||'],
-    ['times', '.*'],
-    ['rdivide', './'],
-    ['ldivide', '.\\'],
-    ['transpose', '.\''],
-    ['eq', '=='],
-    ['ne', '~='],
-    ['le', '<='],
-    ['ge', '>='],
-    ['lparen', '('],
-    ['rparen', ')'],
-    ['lsquare', '['],
-    ['rsquare', ']'],
-    ['lbrace', '{'],
-    ['rbrace', '}'],
-    ['semi', ';'],
-    ['colon', ':'],
-    ['comma', ','],
-    ['plus', '+'],
-    ['minus', '-'],
-    ['mtimes', '*'],
-    ['mrdivide', '/'],
-    ['mldivide', '\\'],
-    ['lt', '<'],
-    ['gt', '>'],
-    ['assign', '='],
-    ['not', '~'],
-    ['field', '.'],
-    ['lambda', '@'],
-    ['newline', newline],
-    ]
 [testdir, pydir] = configure()
 if isfolder(pydir + '/nodes'):
     rmdir(pydir + '/nodes', 's')
@@ -700,7 +708,7 @@ fid = fopen(pydir + '/main.py', 'wt+')
 files = dir('mcst')
 for i in colon(1, numel(files)):
     if not (startsWith(mparen(files, i).name, '.') or endsWith(mparen(files, i).name, '.asv')):
-        node = parseFile('mcst/' + mparen(files, i).name, table)
+        node = parseFile('mcst/' + mparen(files, i).name)
         output(testdir + '/' + mparen(files, i).name, node)
         m2py(pydir + '/nodes/' + mparenl(mparen(files, i).name, lambda end: (colon(1, end - 2),)) + '.py', node)
         fprintf(fid, 'from test_m.py.nodes.%s import %s\\n', mparenl(mparen(files, i).name, lambda end: (colon(1, end - 2),)), mparenl(mparen(files, i).name, lambda end: (colon(1, end - 2),)))
@@ -716,20 +724,20 @@ fprintf(fid, 'from test_m.py.nodes.Matrix import Matrix\\n')
 fprintf(fid, 'from test_m.py.nodes.MatrixLine import MatrixLine\\n')
 fclose(fid)
 #
-node = parseFile('main.m', table)
+node = parseFile('main.m')
 output(testdir + '/main.m', node)
 m2py(pydir + '/main.py', node)
 compareFile('main.m', testdir + '/main.m')
 #
-node = parseFile('output.m', table)
+node = parseFile('output.m')
 output(testdir + '/output.m', node)
 m2py(pydir + '/output.py', node)
 compareFile('output.m', testdir + '/output.m')
 #
-output(testdir + '/List.m', parseFile('List.m', table))
+output(testdir + '/List.m', parseFile('List.m'))
 compareFile('List.m', testdir + '/List.m')
 #
-node = parseFile('m2py.m', table)
+node = parseFile('m2py.m')
 output(testdir + '/m2py.m', node)
 m2py(pydir + '/m2py.py', node)
 compareFile('m2py.m', testdir + '/m2py.m')

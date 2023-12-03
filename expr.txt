@@ -165,9 +165,10 @@ Times(a, b)
 a
 b
 Token
-Token(type, token)
+Token(type, token, sym)
 type
 token
+sym
 Transpose < Expression
 Transpose(value)
 value
@@ -185,6 +186,66 @@ end_
 clc()
 clear()
 close('all')
+configure()
+isfolder(pydir + "/nodes")
+rmdir(pydir + "/nodes", 's')
+mkdir(pydir + "/nodes")
+isfile('expr.txt')
+delete('expr.txt')
+fopen(pydir + "/main.py", 'wt+')
+dir('mcst')
+1 : numel(files)
+~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
+parseFile("mcst/" + files(i).name)
+output(testdir + "/" + files(i).name, node)
+m2py(pydir + "/nodes/" + files(i).name(1 : end - 2) + ".py", node)
+fprintf(fid, 'from test_m.py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2))
+compareFile("mcst/" + files(i).name, testdir + "/" + files(i).name)
+fprintf(fid, 'from test_m.py.output import output\n')
+fprintf(fid, 'from test_m.py.m2py import m2py\n')
+fclose(fid)
+isfile(pydir + "/output.py")
+delete(pydir + "/output.py")
+fopen(pydir + "/m2py.py", 'wt+')
+fprintf(fid, 'from test_m.py.nodes.Segment import Segment\n')
+fprintf(fid, 'from test_m.py.nodes.Matrix import Matrix\n')
+fprintf(fid, 'from test_m.py.nodes.MatrixLine import MatrixLine\n')
+fclose(fid)
+parseFile('main.m')
+output(testdir + "/main.m", node)
+m2py(pydir + "/main.py", node)
+compareFile('main.m', testdir + "/main.m")
+parseFile('output.m')
+output(testdir + "/output.m", node)
+m2py(pydir + "/output.py", node)
+compareFile('output.m', testdir + "/output.m")
+output(testdir + "/List.m", parseFile('List.m'))
+compareFile('List.m', testdir + "/List.m")
+parseFile('m2py.m')
+output(testdir + "/m2py.m", node)
+m2py(pydir + "/m2py.py", node)
+compareFile('m2py.m', testdir + "/m2py.m")
+compareFile(file1, file2)
+readFile(file1)
+readFile(file2)
+split(replace(content1, ' ', ''), newline)
+split(replace(content2, ' ', ''), newline)
+numel(content1) ~= numel(content2)
+warning('length of %s not equal with length of %s', file1, file2)
+find(cellfun(@(a, b)~strcmp(a, b), content1, content2))
+~isempty(d)
+warning('%s vs %s: diff found in line %s\n', file1, file2, mat2str(d))
+disp(file1 + " vs " + file2 + ": equal without space")
+readFile(filename)
+fopen(filename)
+native2unicode(fread(fid).')
+fclose(fid)
+contains(content, sprintf('\r\n'))
+replace(content, sprintf('\r\n'), newline)
+parseFile(filename)
+readFile(filename)
+program(tokenize(content))
+tokenize(s)
 [
     {'and', '&&'}
     {'or', '||'}
@@ -218,66 +279,6 @@ close('all')
     {'lambda', '@'}
     {'newline', newline}
     ]
-configure()
-isfolder(pydir + "/nodes")
-rmdir(pydir + "/nodes", 's')
-mkdir(pydir + "/nodes")
-isfile('expr.txt')
-delete('expr.txt')
-fopen(pydir + "/main.py", 'wt+')
-dir('mcst')
-1 : numel(files)
-~(startsWith(files(i).name, '.') || endsWith(files(i).name, '.asv'))
-parseFile("mcst/" + files(i).name, table)
-output(testdir + "/" + files(i).name, node)
-m2py(pydir + "/nodes/" + files(i).name(1 : end - 2) + ".py", node)
-fprintf(fid, 'from test_m.py.nodes.%s import %s\n', files(i).name(1 : end - 2), files(i).name(1 : end - 2))
-compareFile("mcst/" + files(i).name, testdir + "/" + files(i).name)
-fprintf(fid, 'from test_m.py.output import output\n')
-fprintf(fid, 'from test_m.py.m2py import m2py\n')
-fclose(fid)
-isfile(pydir + "/output.py")
-delete(pydir + "/output.py")
-fopen(pydir + "/m2py.py", 'wt+')
-fprintf(fid, 'from test_m.py.nodes.Segment import Segment\n')
-fprintf(fid, 'from test_m.py.nodes.Matrix import Matrix\n')
-fprintf(fid, 'from test_m.py.nodes.MatrixLine import MatrixLine\n')
-fclose(fid)
-parseFile('main.m', table)
-output(testdir + "/main.m", node)
-m2py(pydir + "/main.py", node)
-compareFile('main.m', testdir + "/main.m")
-parseFile('output.m', table)
-output(testdir + "/output.m", node)
-m2py(pydir + "/output.py", node)
-compareFile('output.m', testdir + "/output.m")
-output(testdir + "/List.m", parseFile('List.m', table))
-compareFile('List.m', testdir + "/List.m")
-parseFile('m2py.m', table)
-output(testdir + "/m2py.m", node)
-m2py(pydir + "/m2py.py", node)
-compareFile('m2py.m', testdir + "/m2py.m")
-compareFile(file1, file2)
-readFile(file1)
-readFile(file2)
-split(replace(content1, ' ', ''), newline)
-split(replace(content2, ' ', ''), newline)
-numel(content1) ~= numel(content2)
-warning('length of %s not equal with length of %s', file1, file2)
-find(cellfun(@(a, b)~strcmp(a, b), content1, content2))
-~isempty(d)
-warning('%s vs %s: diff found in line %s\n', file1, file2, mat2str(d))
-disp(file1 + " vs " + file2 + ": equal without space")
-readFile(filename)
-fopen(filename)
-native2unicode(fread(fid).')
-fclose(fid)
-contains(content, sprintf('\r\n'))
-replace(content, sprintf('\r\n'), newline)
-parseFile(filename, table)
-readFile(filename)
-program(tokenize(content, table))
-tokenize(s, table)
 1
 List()
 0
@@ -285,7 +286,7 @@ List()
 j < numel(s)
 count + 1
 nextToken(s, j, table, lastToken)
-tokens.append(Token(type, token))
+tokens.append(Token(type, token, sym))
 type
 TokenList(tokens.toList([]))
 nextToken(s, j, table, lastToken)
@@ -295,10 +296,12 @@ j + 1
 j + numel(table{i, 2}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i, 2}) - 1), table{i, 2})
 table{i, 1}
 table{i, 2}
+table{i, 2}
 j + numel(table{i, 2})
 s(j) == ''''
 strcmp(lastToken, 'identifier') || strcmp(lastToken, 'number')
 'ctranspose'
+''''
 ''''
 j + 1
 j
@@ -308,6 +311,7 @@ j + 1 + (s(j) == '''')
 j + 1
 'chars'
 s(i : j - 1)
+'chars'
 s(j) == '"'
 j
 j + 1
@@ -316,6 +320,7 @@ j + 1 + (s(j) == '"')
 j + 1
 'string'
 s(i : j - 1)
+'string'
 ('a' <= s(j) && s(j) <= 'z') || ('A' <= s(j) && s(j) <= 'Z')
 j
 j <= numel(s) && (('a' <= s(j) && s(j) <= 'z') || ('A' <= s(j) && s(j) <= 'Z') || ('0' <= s(j) && s(j) <= '9') || s(j) == '_')
@@ -323,6 +328,8 @@ j + 1
 s(i : j - 1)
 ismember(token, {'return', 'break', 'continue', 'if', 'elseif', 'for', 'else', 'while', 'end', 'function', 'switch', 'case', 'otherwise', 'classdef', 'properties', 'methods'})
 'keyword'
+token
+'identifier'
 'identifier'
 ('0' <= s(j) && s(j) <= '9') || (s(j) == '.' && j + 1 <= numel(s) && '0' <= s(j + 1) && s(j + 1) <= '9')
 j
@@ -333,12 +340,14 @@ j <= numel(s) && (('0' <= s(j) && s(j) <= '9') || (~dot && ~exp && s(j) == '.') 
 j + 1
 'number'
 s(i : j - 1)
+'number'
 s(j) == '%'
 j
 j <= numel(s) && s(j) ~= newline
 j + 1
 'comment'
 s(i : j - 1)
+'comment'
 error('unknown token')
 field(tokens)
 tokens.get().type

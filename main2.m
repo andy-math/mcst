@@ -114,7 +114,7 @@ grammar.('commaSeparatedExprOrEmpty') = {
     };
 grammar.('matrix2') = {
     {';','commaSeparatedExprOrEmpty','matrix2'}
-    {'newline','commaSeparatedExprOrEmpty','matrix2'}
+    {newline,'commaSeparatedExprOrEmpty','matrix2'}
     {}
     };
 grammar.('matrix') = {{'[','commaSeparatedExprOrEmpty','matrix2',']'}};
@@ -137,7 +137,7 @@ grammar.('expressionOrEmpty') = {
     {}
     };
 grammar.('line') = {
-    {'newline','expressionOrEmpty','line'}
+    {newline,'expressionOrEmpty','line'}
     {}
     };
 grammar.('code') = {{'expressionOrEmpty','line','eof'}};
@@ -167,27 +167,17 @@ function content = readFile(filename)
     end
 end
 function node = parse(tokens,term,grammar,first,follow)
-    if any(strcmp(tokens.get().type,{'identifier','newline','chars','string','number','eof'}))
-        sym = tokens.get().type;
-    else
-        sym = tokens.get().token;
-    end
-    if any(strcmp('',[first.(term){:}])) && ismember(sym,follow.(term))
+    if any(strcmp('',[first.(term){:}])) && ismember(tokens.get().sym,follow.(term))
         node = [];
         return
     end
     for i = 1:numel(grammar.(term))
-        if ismember(sym,first.(term){i})
+        if ismember(tokens.get().sym,first.(term){i})
             for j = 1:numel(grammar.(term){i})
                 if isfield(grammar,grammar.(term){i}{j})
                     parse(tokens,grammar.(term){i}{j},grammar,first,follow);
                 else
-                    if ismember(tokens.get().type,{'identifier','newline','chars','string','number','eof'})
-                        sym = tokens.get().type;
-                    else
-                        sym = tokens.get().token;
-                    end
-                    if strcmp(sym,grammar.(term){i}{j})
+                    if strcmp(tokens.get().sym,grammar.(term){i}{j})
                         fprintf('%s',tokens.get().token);
                         tokens.next();
                     else
@@ -240,14 +230,14 @@ function tokens = tokenize(s)
     lastToken = '';
     while j < numel(s)
         count = count + 1;
-        [j, type, token] = nextToken(s, j, table, lastToken);
-        tokens.append(Token(type, token));
+        [j, type, token, sym] = nextToken(s, j, table, lastToken);
+        tokens.append(Token(type, token, sym));
         lastToken = type;
     end
-    tokens.append(Token('eof','eof'));
+    tokens.append(Token('eof','eof','eof'));
     tokens = TokenList(tokens.toList([]));
 end
-function [j, type, token] = nextToken(s, j, table, lastToken)
+function [j, type, token, sym] = nextToken(s, j, table, lastToken)
     while j <= numel(s) && s(j) == ' '
         j = j + 1;
     end
@@ -255,6 +245,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         if j + numel(table{i, 2}) - 1 <= numel(s) && strcmp(s(j : j + numel(table{i, 2}) - 1), table{i, 2})
             type = table{i, 1};
             token = table{i, 2};
+            sym = table{i, 2};
             j = j + numel(table{i, 2});
             return
         end
@@ -263,6 +254,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         if strcmp(lastToken, 'identifier') || strcmp(lastToken, 'number')
             type = 'ctranspose';
             token = '''';
+            sym = '''';
             j = j + 1;
             return
         end
@@ -274,6 +266,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         j = j + 1;
         type = 'chars';
         token = s(i : j - 1);
+        sym = 'chars';
         return
     end
     if s(j) == '"'
@@ -285,6 +278,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         j = j + 1;
         type = 'string';
         token = s(i : j - 1);
+        sym = 'string';
         return
     end
     if ('a' <= s(j) && s(j) <= 'z') || ('A' <= s(j) && s(j) <= 'Z')
@@ -295,8 +289,10 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         token = s(i : j - 1);
         if ismember(token, {'return', 'break', 'continue', 'if', 'elseif', 'for', 'else', 'while', 'end', 'function', 'switch', 'case', 'otherwise', 'classdef', 'properties', 'methods'})
             type = 'keyword';
+            sym = token;
         else
             type = 'identifier';
+            sym = 'identifier';
         end
         return
     end
@@ -311,6 +307,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         end
         type = 'number';
         token = s(i : j - 1);
+        sym = 'number';
         return
     end
     if s(j) == '%'
@@ -320,6 +317,7 @@ function [j, type, token] = nextToken(s, j, table, lastToken)
         end
         type = 'comment';
         token = s(i : j - 1);
+        sym = 'comment';
         return
     end
     error('unknown token');
