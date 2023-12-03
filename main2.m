@@ -170,28 +170,21 @@ function content = readFile(filename)
     end
 end
 function i = parse(tokens,grammar,term,i)
-    stack = cell(size(tokens));
-    stack{1} = {term,1};
+    stack = {{detectTerm(grammar.(term),tokens{i}),1}};
     count = 1;
     while count > 0
         term = stack{count}{1};
         j = stack{count}{2};
-        if isa(term,'char')
-            term = grammar.(term);
-            token = tokens{i};
-            index = find(strcmp(token.sym,term.first));
-            if isempty(index)
-                error('unexpected token');
-            end
-            index = term.index(index);
-            term = term.grammar{index};
-            stack{count}{1} = term;
-        end
         while j <= numel(term)
             if isfield(grammar,term{j})
                 stack{count}{2} = j+1;
+                if numel(stack) == count
+                    tmp = cell(2*numel(stack),1);
+                    tmp(1:count) = stack;
+                    stack = tmp;
+                end
                 count = count+1;
-                stack{count} = {term{j}, 1};
+                stack{count} = {detectTerm(grammar.(term{j}),tokens{i}), 1};
                 break
             else
                 token = tokens{i};
@@ -207,6 +200,13 @@ function i = parse(tokens,grammar,term,i)
             count = count-1;
         end
     end
+end
+function term = detectTerm(term,token)
+    index = find(strcmp(token.sym,term.first));
+    if isempty(index)
+        error('unexpected token');
+    end
+    term = term.grammar{index};
 end
 function tokens = tokenize(s)
     table = {
@@ -380,9 +380,8 @@ function grammar = preprocess(grammar,first,follow)
         index = arrayfun(@(i)repmat(i,size(first_{i})),1:numel(first_),'un',0);
         grammar_ = grammar.(term);
         grammar.(term) = struct();
-        grammar.(term).('grammar') = grammar_;
+        grammar.(term).('grammar') = grammar_([index{:}]);
         grammar.(term).('first') = [first_{:}];
-        grammar.(term).('index') = [index{:}];
     end
 end
 function first = getFirst(first,term,grammar)
