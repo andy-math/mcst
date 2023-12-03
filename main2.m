@@ -158,7 +158,9 @@ end
 grammar = preprocess(grammar,first,follow);
 content = readFile('expr.txt');
 tokens = tokenize(content);
+tic
 parse(tokens,grammar,'code');
+toc
 function content = readFile(filename)
     fid = fopen(filename);
     content = native2unicode(fread(fid).');
@@ -169,7 +171,8 @@ function content = readFile(filename)
 end
 function parse(tokens,grammar,term)
     term = grammar.(term);
-    index = find(strcmp(tokens.get().sym,term.first));
+    token = tokens.get();
+    index = find(strcmp(token.sym,term.first));
     if isempty(index)
         error('unexpected token');
     end
@@ -179,8 +182,8 @@ function parse(tokens,grammar,term)
         if isfield(grammar,term{j})
             parse(tokens,grammar,term{j});
         else
-            if strcmp(tokens.get().sym,term{j})
-                fprintf('%s',tokens.get().token);
+            token = tokens.get();
+            if strcmp(token.sym,term{j})
                 tokens.next();
             else
                 error('unexpected token');
