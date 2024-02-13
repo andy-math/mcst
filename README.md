@@ -40,7 +40,7 @@ Roadmap:
 + [ ] Support command format
 + [ ] Support exclamation point
 + [ ] More test cases
-+ [ ] Imporve performance
++ [ ] Improve performance
 
 For more information about concrete syntax tree, see:
 
